@@ -140,18 +140,19 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode:
-			if cmd.startswith("M80"):
-				plugip = re.sub(r'^M80\s?', '', cmd)
-				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",gcodeon=True,ip=plugip))
-				self._tasmota_logger.debug("Received M80 command, attempting power on.")
-				return
-			elif cmd.startswith("M81"):
-				plugip = re.sub(r'^M81\s?', '', cmd)
-				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",gcodeoff=True,ip=plugip))
-				self._tasmota_logger.debug("Received M81 command, attempting power off.")
-				return
-			else:
-				return
+			if cmd.count(" ") >= 2:
+				plugip = cmd.split()[1]
+				plugidx = cmd.split()[2]
+				if cmd.startswith("M80"):
+					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",gcodeon=True,ip=plugip,idx=plugidx))
+					self._tasmota_logger.debug("Received M80 command, attempting power on.")
+					return
+				elif cmd.startswith("M81"):
+					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",gcodeoff=True,ip=plugip,idx=plugidx))
+					self._tasmota_logger.debug("Received M81 command, attempting power off.")
+					return
+				else:
+					return
 			
 
 	##~~ Softwareupdate hook
