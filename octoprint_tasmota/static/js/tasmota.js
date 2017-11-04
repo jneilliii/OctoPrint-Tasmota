@@ -143,7 +143,7 @@ $(function() {
         };
 
     	self.turnOff = function(data) {
-			var dlg_id = "#tasmota_poweroff_confirmation_dialog_" + data.ip().replace( /(:|\.|[|])/g, "\\$1" + "_" + data.idx());
+			var dlg_id = "#tasmota_poweroff_confirmation_dialog_" + data.ip().replace( /(:|\.|[|])/g, "\\$1") + "_" + data.idx();
 			if((data.displayWarning() || (self.isPrinting() && data.warnPrinting())) && !$(dlg_id).is(':visible')){
 				$(dlg_id).modal("show");
 			} else {
