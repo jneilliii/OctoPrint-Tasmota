@@ -114,6 +114,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		return dict(turnOn=["ip","idx"],turnOff=["ip","idx"],checkStatus=["ip","idx"],connectPrinter=[],disconnectPrinter=[],sysCommand=["cmd"])
 
 	def on_api_command(self, command, data):
+		self._tasmota_logger.debug(data)
 		if not user_permission.can():
 			from flask import make_response
 			return make_response("Insufficient rights", 403)
@@ -178,7 +179,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 # If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
 # can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
-__plugin_name__ = "TP-Link Smartplug"
+__plugin_name__ = "Tasmota"
 
 def __plugin_load__():
 	global __plugin_implementation__
