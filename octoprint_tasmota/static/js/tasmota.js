@@ -230,8 +230,8 @@ $(function() {
 		self.checkStatuses = function() {
 			ko.utils.arrayForEach(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				if(item.ip() !== "") {
-					console.log("checking " + item.ip())
-					self.checkStatus(item.ip());
+					console.log("checking " + item.ip() + " index " + item.idx())
+					self.checkStatus(item.ip(),item.idx());
 				}
 			});
         };
