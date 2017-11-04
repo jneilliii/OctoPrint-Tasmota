@@ -3,8 +3,8 @@
 	<table class="table table-condensed" data-bind='visible: settings.settings.plugins.tasmota.arrSmartplugs().length > 0'>
 		<tbody data-bind='foreach: settings.settings.plugins.tasmota.arrSmartplugs'>
 			<tr data-bind='attr: {title: ip}' class="info">
-				<td colspan="3"><strong>IP or Hostname</strong> <input data-bind='value: ip, uniqueName: true' /></td>
-				<td colspan="3"><strong>Index</strong> <input data-bind='value: idx, uniqueName: true' /></td>
+				<td colspan="3"><strong>IP or Hostname</strong> <input data-bind='value: ip, uniqueName: true' class="input-sm" /></td>
+				<td colspan="3"><strong>Index</strong> <input data-bind='value: idx, uniqueName: true' class="input-sm" /></td>
 				<td style="text-align:center"><a href="#" class="icon-trash" data-bind="click: $root.removePlug, visible: $root.settings.settings.plugins.tasmota.arrSmartplugs().length > 1"></a></td>
 			</tr>
 			<tr data-bind='visible: ip().length > 0, attr: {title: ip}' class="info">
