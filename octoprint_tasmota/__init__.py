@@ -9,6 +9,7 @@ import time
 import logging
 import os
 import re
+import urllib2
 
 class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
                             octoprint.plugin.AssetPlugin,
