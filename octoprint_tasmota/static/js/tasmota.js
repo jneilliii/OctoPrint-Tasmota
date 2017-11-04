@@ -66,8 +66,9 @@ $(function() {
                 return;
             }
 			
+			console.log(data);
 			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
-				return ((item.ip() === data.ip) && (item.idx() === data.idx));
+				return (item.ip() === data.ip) && (item.idx() === data.idx);
 				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080'};
 			
 			if (data.gcodeon && plug.gcodeEnabled()) {
