@@ -85,17 +85,35 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	
 	def turn_on(self, plugip, plugidx):
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
-		response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read().split()[2])
-		chk = response["POWER"]
+		try:
+			response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read().split()[2])
+			chk = response["POWER"]
+		except:
+			chk = "UNKNOWN"
+		
 		if chk == "ON":
-			self.check_status(plugip, plugidx)
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
+		elif chk == "OFF":
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
+		else:
+			self._tasmota_logger.debug(response)
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 	
 	def turn_off(self, plugip, plugidx):
 		self._tasmota_logger.debug("Turning off %s index %s." % (plugip, plugidx))
-		response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20off").read().split()[2])
-		chk = response["POWER"]
-		if chk == "OFF":
-			self.check_status(plugip, plugidx)
+		try:
+			response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20off").read().split()[2])
+			chk = response["POWER"]
+		except:
+			chk = "UNKNOWN"
+		
+		if chk == "ON":
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
+		elif chk == "OFF":
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
+		else:
+			self._tasmota_logger.debug(response)
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 		
 	def check_status(self, plugip, plugidx):
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
