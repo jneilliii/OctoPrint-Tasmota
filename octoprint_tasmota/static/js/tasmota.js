@@ -93,7 +93,7 @@ $(function() {
 					default:
 						plug.btnColor("#808080");
 						new PNotify({
-							title: 'TP-Link Smartplug Error',
+							title: 'Tasmota Error',
 							text: 'Status ' + plug.currentState() + ' for ' + plug.ip() + '. Double check IP Address\\Hostname in Tasmota Settings.',
 							type: 'error',
 							hide: true
