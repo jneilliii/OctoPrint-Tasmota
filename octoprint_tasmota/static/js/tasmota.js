@@ -66,7 +66,10 @@ $(function() {
                 return;
             }
 			
-			console.log(data);
+			if(self.settings.settings.plugins.tasmota.debug_logging()){
+				console.log(data);
+			}
+			
 			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				return (item.ip() == data.ip) && (item.idx() == data.idx);
 				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080'};
@@ -230,7 +233,9 @@ $(function() {
 		self.checkStatuses = function() {
 			ko.utils.arrayForEach(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				if(item.ip() !== "") {
-					console.log("checking " + item.ip() + " index " + item.idx())
+					if(self.settings.settings.plugins.tasmota.debug_logging()){
+						console.log("checking " + item.ip() + " index " + item.idx());
+					}
 					self.checkStatus(item.ip(),item.idx());
 				}
 			});
