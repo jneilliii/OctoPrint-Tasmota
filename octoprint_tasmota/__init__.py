@@ -118,13 +118,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def check_status(self, plugip, plugidx):
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
-			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, response))
 			try:
 				response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx)).read().split()[2])
 				chk = response["POWER"]
 			except:
 				chk = "UNKNOWN"
-			
+				
+			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, response))
 			if chk == "ON":
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
 			elif chk == "OFF":
