@@ -72,7 +72,7 @@ $(function() {
             
             if(self.settings.settings.plugins.tasmota.debug_logging()){
 			    console.log('msg received:'+JSON.stringify(data));
-                console.log('plug data:'+JSON.stringify(plug));
+                console.log('plug data:'+JSON.stringify(plug()));
 			}
 			
 			if (data.gcodeon && plug.gcodeEnabled()) {
