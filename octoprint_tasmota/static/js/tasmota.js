@@ -71,8 +71,8 @@ $(function() {
 				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080'};
             
             if(self.settings.settings.plugins.tasmota.debug_logging()){
-			    console.log('msg received:'+data);
-                console.log('plug data:'+plug);
+			    console.log('msg received:'+JSON.stringify(data));
+                console.log('plug data:'+JSON.stringify(plug));
 			}
 			
 			if (data.gcodeon && plug.gcodeEnabled()) {
