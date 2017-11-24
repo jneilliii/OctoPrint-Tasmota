@@ -85,7 +85,7 @@ $(function() {
 				return false;
 			}
 			
-			if (plug.currentState != data.currentState) {
+			if (plug.currentState != data.currentState) {                
 				plug.currentState(data.currentState)
 				switch(data.currentState) {
 					case "on":
@@ -102,7 +102,7 @@ $(function() {
 							type: 'error',
 							hide: true
 							});
-				self.settings.saveData();
+                self.settings.saveData();
 				}
 			}
         };
