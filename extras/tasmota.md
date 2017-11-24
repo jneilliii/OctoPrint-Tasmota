@@ -1,81 +1,38 @@
 ---
 layout: plugin
 
-id: tplinksmartplug
-title: OctoPrint-TPLinkSmartplug
-description: Simple plugin to control TP-Link Smartplug
+id: tasmota
+title: OctoPrint-Tasmota
+description: Simple plugin to control sonoff devices that have been flashed with Tasmota.
 author: jneilliii
 license: AGPLv3
 
-# TODO
-date: today's date in format YYYY-MM-DD, e.g. 2015-04-21
+date: 2017-11-24
 
-homepage: https://github.com/jneilliii/OctoPrint-TPLinkSmartplug
-source: https://github.com/jneilliii/OctoPrint-TPLinkSmartplug
-archive: https://github.com/jneilliii/OctoPrint-TPLinkSmartplug/archive/master.zip
+homepage: https://github.com/jneilliii/OctoPrint-Tasmota
+source: https://github.com/jneilliii/OctoPrint-Tasmota
+archive: https://github.com/jneilliii/OctoPrint-Tasmota/archive/master.zip
 
-# TODO
-# Set this to true if your plugin uses the dependency_links setup parameter to include
-# library versions not yet published on PyPi. SHOULD ONLY BE USED IF THERE IS NO OTHER OPTION!
-#follow_dependency_links: false
-
-# TODO
 tags:
-- a list
-- of tags
-- that apply
-- to your plugin
-- (take a look at the existing plugins for what makes sense here)
+- sonoff
+- tasmota
+- smartplug
+- power
 
-# TODO
 screenshots:
-- url: url of a screenshot, /assets/img/...
-  alt: alt-text of a screenshot
-  caption: caption of a screenshot
-- url: url of another screenshot, /assets/img/...
-  alt: alt-text of another screenshot
-  caption: caption of another screenshot
-- ...
+- url: /assets/img/plugins/tasmota/screenshot.png
+  alt: Screenshot
+  caption: Navbar screenshot
+- url: /assets/img/plugins/tasmota/settings.png
+  alt: Settings
+  caption: Settings screenshot
 
-# TODO
-featuredimage: url of a featured image for your plugin, /assets/img/...
-
-# TODO
-# You only need the following if your plugin requires specific OctoPrint versions or
-# specific operating systems to function - you can safely remove the whole
-# "compatibility" block if this is not the case.
+featuredimage: /assets/img/plugins/tasmota/screenshot.png
 
 compatibility:
 
-  # List of compatible versions
-  #
-  # A single version number will be interpretated as a minimum version requirement,
-  # e.g. "1.3.1" will show the plugin as compatible to OctoPrint versions 1.3.1 and up.
-  # More sophisticated version requirements can be modelled too by using PEP440
-  # compatible version specifiers.
-  #
-  # You can also remove the whole "octoprint" block. Removing it will default to all
-  # OctoPrint versions being supported.
-
   octoprint:
   - 1.2.0
-
-  # List of compatible operating systems
-  #
-  # Valid values:
-  #
-  # - windows
-  # - linux
-  # - macos
-  # - freebsd
-  #
-  # There are also two OS groups defined that get expanded on usage:
-  #
-  # - posix: linux, macos and freebsd
-  # - nix: linux and freebsd
-  #
-  # You can also remove the whole "os" block. Removing it will default to all
-  # operating systems being supported.
 
   os:
   - linux
@@ -84,6 +41,30 @@ compatibility:
   - freebsd
 
 ---
+This plugin is to control ITead Sonoff devices that have been flashed with [Sonoff-Tasmota](https://github.com/arendst/Sonoff-Tasmota) via web calls.
 
-**TODO**: Longer description of your plugin, configuration examples etc. This part will be visible on the page at
-http://plugins.octoprint.org/plugin/tplinksmartplug/
+## Configuration
+
+Once installed go into settings and enter the ip address for your TP-Link Smartplug device. Adjust additional settings as needed.
+
+## Settings Explained
+
+- **Device**
+  - The ip or hostname of sonoff device.
+- **Index**
+  - Index number reprensenting the relay to control.
+- **Warn**
+  - The left checkbox will always warn when checked.
+  - The right checkbox will only warn when printer is printing.
+- **GCODE**
+  - When checked this will enable the processing of M80 and M81 commands from gcode to power on/off plug.  Syntax for gcode command is M80/M81 followed by hostname/ip and index.  For example if your plug is 192.168.1.2 and index of 1 your gcode command would be **M80 192.168.1.2 1**
+- **postConnect**
+  - Automatically connect to printer after plug is powered on.
+  - Will wait for number of seconds configured in **Auto Connect Delay** setting prior to attempting connection to printer.
+- **preDisconnect**
+  - Automatically disconnect printer prior to powering off the plug.
+  - Will wait for number of seconds configured in **Auto Disconnect Delay** prior to powering off the plug.
+- **Cmd On**
+  - When checked will run system command configured in **System Command On** setting after a delay in seconds configured in **System Command On Delay**.
+- **Cmd Off**
+  - When checked will run system command configured in **System Command Off** setting after a delay in seconds configured in **System Command Off Delay**.

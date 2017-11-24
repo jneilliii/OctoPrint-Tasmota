@@ -66,13 +66,14 @@ $(function() {
                 return;
             }
 			
-			if(self.settings.settings.plugins.tasmota.debug_logging()){
-				console.log(data);
-			}
-			
 			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				return (item.ip() == data.ip) && (item.idx() == data.idx);
 				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080'};
+            
+            if(self.settings.settings.plugins.tasmota.debug_logging()){
+			    console.log('msg received:'+JSON.stringify(data));
+                console.log('plug data:'+ko.toJSON(plug));
+			}
 			
 			if (data.gcodeon && plug.gcodeEnabled()) {
 				setTimeout(function(){self.turnOn(plug)},plug.gcodeOnDelay()*1000);
@@ -84,7 +85,7 @@ $(function() {
 				return false;
 			}
 			
-			if (plug.currentState != data.currentState) {
+			if (plug.currentState != data.currentState) {                
 				plug.currentState(data.currentState)
 				switch(data.currentState) {
 					case "on":
@@ -101,8 +102,8 @@ $(function() {
 							type: 'error',
 							hide: true
 							});
-				self.settings.saveData();
-				}
+				}                
+                self.settings.saveData();
 			}
         };
 		

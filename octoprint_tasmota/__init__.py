@@ -90,6 +90,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			chk = response["POWER"]
 		except:
 			chk = "UNKNOWN"
+			
+		self._tasmota_logger.debug("Response: %s" % response)
 		
 		if chk == "ON":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
@@ -106,6 +108,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			chk = response["POWER"]
 		except:
 			chk = "UNKNOWN"
+			
+		self._tasmota_logger.debug("Response: %s" % response)
 		
 		if chk == "ON":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
@@ -126,6 +130,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				chk = "UNKNOWN"
 				
 			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, response))
+			
 			if chk == "ON":
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
 			elif chk == "OFF":

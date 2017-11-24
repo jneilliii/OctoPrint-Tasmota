@@ -21,6 +21,10 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
 
 ## Settings Explained
 
+- **Device**
+  - The ip or hostname of sonoff device.
+- **Index**
+  - Index number reprensenting the relay to control.
 - **Warn**
   - The left checkbox will always warn when checked.
   - The right checkbox will only warn when printer is printing.
