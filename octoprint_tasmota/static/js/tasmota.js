@@ -102,8 +102,8 @@ $(function() {
 							type: 'error',
 							hide: true
 							});
+				}                
                 self.settings.saveData();
-				}
 			}
         };
 		
