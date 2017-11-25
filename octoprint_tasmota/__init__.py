@@ -88,7 +88,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read().split()[2])
 			chk = response["POWER"]
-		except:
+		except:			
+			self._tasmota_logger.error('Error encountered.', exc_info=True)
 			chk = "UNKNOWN"
 			
 		self._tasmota_logger.debug("Response: %s" % response)
@@ -107,6 +108,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20off").read().split()[2])
 			chk = response["POWER"]
 		except:
+			self._tasmota_logger.error('Error encountered.', exc_info=True)
 			chk = "UNKNOWN"
 			
 		self._tasmota_logger.debug("Response: %s" % response)
@@ -126,7 +128,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx)).read().split()[2])
 				chk = response["POWER"]
 			except:
-				self._tasmota_logger.debug('Error:', exc_info=True)
+				self._tasmota_logger.error('Error encountered.', exc_info=True)
 				response = "Error connecting to %s." % plugip
 				chk = "UNKNOWN"
 				
