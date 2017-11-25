@@ -86,9 +86,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def turn_on(self, plugip, plugidx):
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
 		try:
-			response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read().split()[2])
+			webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read()
+			response = json.loads(webresponse.split()[2])
 			chk = response["POWER"]
-		except:
+		except:			
+			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
+			response = "Unknown error turning on %s index %s." % (plugip, plugidx)
 			chk = "UNKNOWN"
 			
 		self._tasmota_logger.debug("Response: %s" % response)
@@ -104,9 +107,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def turn_off(self, plugip, plugidx):
 		self._tasmota_logger.debug("Turning off %s index %s." % (plugip, plugidx))
 		try:
-			response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20off").read().split()[2])
+			webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20off").read()
+			response = json.loads(webresponse.split()[2])
 			chk = response["POWER"]
 		except:
+			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
+			response = "Unknown error turning off %s index %s." % (plugip, plugidx)
 			chk = "UNKNOWN"
 			
 		self._tasmota_logger.debug("Response: %s" % response)
@@ -123,13 +129,16 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
-				response = json.loads(urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx)).read().split()[2])
+				webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx)).read()
+				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
+				response = json.loads(webresponse.split()[2])
 				chk = response["POWER"]
 			except:
-				response = "Error connecting to %s." % plugip
+				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
+				response = "unknown error with %s." % plugip
 				chk = "UNKNOWN"
 				
-			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, response))
+			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, chk))
 			
 			if chk == "ON":
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
