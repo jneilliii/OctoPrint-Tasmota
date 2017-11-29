@@ -116,7 +116,7 @@ $(function() {
 					self.turnOn(data);
 					break;
 				default:
-					self.checkStatus(data.ip(),data.idx());
+					self.checkStatus(data);
 			}
 		}
 		
@@ -173,22 +173,26 @@ $(function() {
 			dataType: "json",
 			data: JSON.stringify({
 				command: "turnOff",
-				ip: data.ip(),
-				idx: data.idx()
+					ip: data.ip(),
+					idx: data.idx(),
+					username: data.username(),
+					password: data.password()
 			}),
 			contentType: "application/json; charset=UTF-8"
 			});		
 		}
 		
-		self.checkStatus = function(plugIP,plugIDX) {
+		self.checkStatus = function(data) {
             $.ajax({
                 url: API_BASEURL + "plugin/tasmota",
                 type: "POST",
                 dataType: "json",
                 data: JSON.stringify({
                     command: "checkStatus",
-					ip: plugIP,
-					idx: plugIDX
+					ip: data.ip(),
+					idx: data.idx(),
+					username: data.username(),
+					password: data.password()
                 }),
                 contentType: "application/json; charset=UTF-8"
             }).done(function(){
@@ -239,7 +243,7 @@ $(function() {
 					if(self.settings.settings.plugins.tasmota.debug_logging()){
 						console.log("checking " + item.ip() + " index " + item.idx());
 					}
-					self.checkStatus(item.ip(),item.idx());
+					self.checkStatus(item);
 				}
 			});
         };
