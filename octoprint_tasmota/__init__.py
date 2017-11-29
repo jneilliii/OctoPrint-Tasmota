@@ -86,8 +86,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def turn_on(self, plugip, plugidx, **kwargs):
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
 		try:
-			if "username" in **kwargs
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + "{username}".format(**kwargs) + "&password=" + "{password}".format(**kwargs) + "&cmnd=Power" + str(plugidx) + "%20on").read()
+			if "username" in kwargs
+				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + kwargs["username"] + "&password=" + kwargs["password"] + "&cmnd=Power" + str(plugidx) + "%20on").read()
 			else:
 				webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read()
 			response = json.loads(webresponse.split()[2])
@@ -132,8 +132,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
-				if "username" in **kwargs
-					webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + "{username}".format(**kwargs) + "&password=" + "{password}".format(**kwargs) + "cmnd=Power" + str(plugidx)).read()
+				if "username" in kwargs
+					webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + kwargs["username"] + "&password=" + kwargs["password"] + "cmnd=Power" + str(plugidx)).read()
 				else:
 					webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx)).read()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
@@ -166,7 +166,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if command == 'turnOn':
 			if "username" in data and data["username"] != "":
 				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
-				self.turn_on("{ip}".format(**data),"{idx}".format(**data),"{username}".format(**data),"{password}".format(**data))
+				self.turn_on("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data))
 			else:
 				self.turn_on("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'turnOff':
