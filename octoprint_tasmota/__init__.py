@@ -132,7 +132,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "cmnd=Power" + str(plugidx)).read()
+				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx)).read()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
 				response = json.loads(webresponse.split()[2])
 				chk = response["POWER"]
