@@ -86,7 +86,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def turn_on(self, plugip, plugidx, **kwargs):
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
 		try:
-			if "username" in kwargs
+			if "username" in kwargs:
 				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + kwargs["username"] + "&password=" + kwargs["password"] + "&cmnd=Power" + str(plugidx) + "%20on").read()
 			else:
 				webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read()
@@ -132,7 +132,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
-				if "username" in kwargs
+				if "username" in kwargs:
 					webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + kwargs["username"] + "&password=" + kwargs["password"] + "cmnd=Power" + str(plugidx)).read()
 				else:
 					webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx)).read()
