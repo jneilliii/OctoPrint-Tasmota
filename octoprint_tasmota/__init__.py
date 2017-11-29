@@ -83,13 +83,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		
 	##~~ SimpleApiPlugin mixin
 	
-	def turn_on(self, plugip, plugidx, **kwargs):
+	def turn_on(self, plugip, plugidx, username="admin", password=""):
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
 		try:
-			if "username" in kwargs:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + kwargs["username"] + "&password=" + kwargs["password"] + "&cmnd=Power" + str(plugidx) + "%20on").read()
-			else:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read()
+			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20on").read()
 			response = json.loads(webresponse.split()[2])
 			chk = response["POWER"]
 		except:			
@@ -107,10 +104,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug(response)
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 	
-	def turn_off(self, plugip, plugidx):
+	def turn_off(self, plugip, plugidx, username="admin", password=""):
 		self._tasmota_logger.debug("Turning off %s index %s." % (plugip, plugidx))
 		try:
-			webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20off").read()
+			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20off").read()
 			response = json.loads(webresponse.split()[2])
 			chk = response["POWER"]
 		except:
