@@ -165,8 +165,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.turn_on("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'turnOff':
 			if "username" in data and data["username"] != "":
-				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data),username="{username}".format(**data),password="{password}".format(**data))
-				self.turn_off("{ip}".format(**data),"{idx}".format(**data))
+				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
+				self.turn_off("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data))
 			else:				
 				self.turn_off("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'checkStatus':
