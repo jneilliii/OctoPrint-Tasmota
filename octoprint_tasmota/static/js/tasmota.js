@@ -140,7 +140,9 @@ $(function() {
                 data: JSON.stringify({
                     command: "turnOn",
 					ip: data.ip(),
-					idx: data.idx()
+					idx: data.idx(),
+					username: data.username(),
+					password: data.password()
                 }),
                 contentType: "application/json; charset=UTF-8"
             });
