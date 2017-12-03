@@ -42,7 +42,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def get_settings_defaults(self):
 		return dict(
 			debug_logging = False,
-			arrSmartplugs = [{'ip':'','displayWarning':True,'idx':1,'warnPrinting':False,'gcodeEnabled':False,'gcodeOnDelay':0,'gcodeOffDelay':0,'autoConnect':True,'autoConnectDelay':10.0,'autoDisconnect':True,'autoDisconnectDelay':0,'sysCmdOn':False,'sysRunCmdOn':'','sysCmdOnDelay':0,'sysCmdOff':False,'sysRunCmdOff':'','sysCmdOffDelay':0,'currentState':'unknown','btnColor':'#808080'}],
+			arrSmartplugs = [{'ip':'','displayWarning':True,'idx':1,'warnPrinting':False,'gcodeEnabled':False,'gcodeOnDelay':0,'gcodeOffDelay':0,'autoConnect':True,'autoConnectDelay':10.0,'autoDisconnect':True,'autoDisconnectDelay':0,'sysCmdOn':False,'sysRunCmdOn':'','sysCmdOnDelay':0,'sysCmdOff':False,'sysRunCmdOff':'','sysCmdOffDelay':0,'currentState':'unknown','btnColor':'#808080','username':'','password':''}],
 		)
 		
 	def on_settings_save(self, data):	
@@ -58,7 +58,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._tasmota_logger.setLevel(logging.INFO)
 				
 	def get_settings_version(self):
-		return 1
+		return 2
 		
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < self.get_settings_version():
@@ -83,10 +83,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		
 	##~~ SimpleApiPlugin mixin
 	
-	def turn_on(self, plugip, plugidx):
+	def turn_on(self, plugip, plugidx, username="admin", password=""):
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
 		try:
-			webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20on").read()
+			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20on").read()
 			response = json.loads(webresponse.split()[2])
 			chk = response["POWER"]
 		except:			
@@ -104,10 +104,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug(response)
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 	
-	def turn_off(self, plugip, plugidx):
+	def turn_off(self, plugip, plugidx, username="admin", password=""):
 		self._tasmota_logger.debug("Turning off %s index %s." % (plugip, plugidx))
 		try:
-			webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx) + "%20off").read()
+			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20off").read()
 			response = json.loads(webresponse.split()[2])
 			chk = response["POWER"]
 		except:
@@ -125,11 +125,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug(response)
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 		
-	def check_status(self, plugip, plugidx):
+	def check_status(self, plugip, plugidx, username="admin", password=""):
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?cmnd=Power" + str(plugidx)).read()
+				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx)).read()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
 				response = json.loads(webresponse.split()[2])
 				chk = response["POWER"]
@@ -158,11 +158,23 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return make_response("Insufficient rights", 403)
         
 		if command == 'turnOn':
-			self.turn_on("{ip}".format(**data),"{idx}".format(**data))
+			if "username" in data and data["username"] != "":
+				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
+				self.turn_on("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data))
+			else:
+				self.turn_on("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'turnOff':
-			self.turn_off("{ip}".format(**data),"{idx}".format(**data))
+			if "username" in data and data["username"] != "":
+				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
+				self.turn_off("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data))
+			else:				
+				self.turn_off("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'checkStatus':
-			self.check_status("{ip}".format(**data),"{idx}".format(**data))
+			if "username" in data and data["username"] != "":
+				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
+				self.check_status("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data))
+			else:
+				self.check_status("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'connectPrinter':
 			self._tasmota_logger.debug("Connecting printer.")
 			self._printer.connect()
