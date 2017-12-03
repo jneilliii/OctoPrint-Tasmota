@@ -55,7 +55,7 @@ $(function() {
 									'sysCmdOffDelay':ko.observable(0),
 									'currentState':ko.observable('unknown'),
 									'btnColor':ko.observable('#808080'),
-									'username':ko.observable(''),
+									'username':ko.observable('admin'),
 									'password':ko.observable('')});
 		}
 		
