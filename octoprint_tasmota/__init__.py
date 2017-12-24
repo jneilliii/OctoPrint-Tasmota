@@ -200,8 +200,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",gcodeoff=True,ip=plugip,idx=plugidx))
 					self._tasmota_logger.debug("Received M81 command, attempting power off.")
 					return
-				else:
-					return
+			return
 			
 
 	##~~ Softwareupdate hook
