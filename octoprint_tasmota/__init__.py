@@ -88,7 +88,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20on").read()
 			response = json.loads(webresponse.split()[2])
-			chk = response["POWER"]
+			chk = response["POWER%s" % plugidx]
 		except:			
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 			response = "Unknown error turning on %s index %s." % (plugip, plugidx)
@@ -109,7 +109,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20off").read()
 			response = json.loads(webresponse.split()[2])
-			chk = response["POWER"]
+			chk = response["POWER%s" % plugidx]
 		except:
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 			response = "Unknown error turning off %s index %s." % (plugip, plugidx)
