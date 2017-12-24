@@ -70,19 +70,19 @@ $(function() {
 			
 			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				return (item.ip() == data.ip) && (item.idx() == data.idx);
-				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080'};
+				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080','gcodeEnabled':false};
             
             if(self.settings.settings.plugins.tasmota.debug_logging()){
 			    console.log('msg received:'+JSON.stringify(data));
                 console.log('plug data:'+ko.toJSON(plug));
 			}
 			
-			if (data.gcodeon && plug.gcodeEnabled()) {
+			if (data.gcodeon && plug.gcodeEnabled) {
 				setTimeout(function(){self.turnOn(plug)},plug.gcodeOnDelay()*1000);
 				return false;
 			}
 			
-			if (data.gcodeoff && plug.gcodeEnabled()) {
+			if (data.gcodeoff && plug.gcodeEnabled) {
 				setTimeout(function(){self.turnOff(plug)},plug.gcodeOffDelay()*1000);
 				return false;
 			}
