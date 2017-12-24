@@ -73,6 +73,7 @@ $(function() {
 				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080','gcodeEnabled':false};
             
             if(self.settings.settings.plugins.tasmota.debug_logging()){
+				console.log(self.settings.settings.plugins.tasmota.arrSmartplugs());
 			    console.log('msg received:'+JSON.stringify(data));
                 console.log('plug data:'+ko.toJSON(plug));
 			}
