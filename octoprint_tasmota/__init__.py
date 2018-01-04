@@ -88,7 +88,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20on").read()
 			response = json.loads(webresponse.split()[2])
-			chk = response["POWER"]
+			chk = response["POWER%s" % plugidx]
 		except:			
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 			response = "Unknown error turning on %s index %s." % (plugip, plugidx)
@@ -109,7 +109,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20off").read()
 			response = json.loads(webresponse.split()[2])
-			chk = response["POWER"]
+			chk = response["POWER%s" % plugidx]
 		except:
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 			response = "Unknown error turning off %s index %s." % (plugip, plugidx)
@@ -132,7 +132,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx)).read()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
 				response = json.loads(webresponse.split()[2])
-				chk = response["POWER"]
+				chk = response["POWER%s" % plugidx]
 			except:
 				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 				response = "unknown error with %s." % plugip
@@ -194,14 +194,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				plugidx = cmd.split()[2]
 				if cmd.startswith("M80"):
 					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",gcodeon=True,ip=plugip,idx=plugidx))
-					self._tasmota_logger.debug("Received M80 command, attempting power on.")
+					self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
 					return
 				elif cmd.startswith("M81"):
 					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",gcodeoff=True,ip=plugip,idx=plugidx))
-					self._tasmota_logger.debug("Received M81 command, attempting power off.")
+					self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
 					return
-				else:
-					return
+			return
 			
 
 	##~~ Softwareupdate hook
