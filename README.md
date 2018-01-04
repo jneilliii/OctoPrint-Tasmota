@@ -25,6 +25,10 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
   - The ip or hostname of sonoff device.
 - **Index**
   - Index number reprensenting the relay to control.
+- **Username**
+  - Username to connect to web interface.  Currently not configurable in Tasmota, use the default username admin.
+- **Password**
+  - Password configured for Web Admin Portal of Tasmota device.
 - **Warn**
   - The left checkbox will always warn when checked.
   - The right checkbox will only warn when printer is printing.
