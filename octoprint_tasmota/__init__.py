@@ -131,7 +131,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			try:
 				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx)).read()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
-				response = json.loads(webresponse.split()[2])
+				response = json.loads(webresponse)
 				chk = response["POWER%s" % plugidx]
 			except:
 				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
