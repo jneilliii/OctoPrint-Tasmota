@@ -2,6 +2,8 @@
 
 This plugin is to control ITead Sonoff devices that have been flashed with [Sonoff-Tasmota](https://github.com/arendst/Sonoff-Tasmota) via web calls.
 
+**Requires minimum Tasmota firmware version 5.9.0.**
+
 ##  Screenshots
 ![screenshot](screenshot.png)
 
@@ -24,7 +26,7 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
 - **Device**
   - The ip or hostname of tasmota device.
 - **Index**
-  - Index number reprensenting the relay to control. If using a simple single relay device leave this value blank.
+  - Index number reprensenting the relay to control. Leave blank for single relay devices.
 - **Username**
   - Username to connect to web interface.  Currently not configurable in Tasmota, use the default username admin.
 - **Password**
