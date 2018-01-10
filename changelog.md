@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - requires minimum Tasmota firmware version 5.9.0.
 
 ### Fixed
-- status detection related to newer Tasmota software reponse being different
+- status detection related to newer Tasmota software response being different
 
 ## [0.3.0] - 2018-01-04
 ### Fixed
