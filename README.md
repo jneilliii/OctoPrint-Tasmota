@@ -24,7 +24,7 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
 ## Settings Explained
 
 - **Device**
-  - The ip or hostname of sonoff device.
+  - The ip or hostname of tasmota device.
 - **Index**
   - Index number reprensenting the relay to control. Leave blank for single relay devices.
 - **Username**
