@@ -37,7 +37,7 @@ $(function() {
 		
 		self.addPlug = function() {
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push({'ip':ko.observable(''),
-									'idx':ko.observable(1),
+									'idx':ko.observable(''),
 									'displayWarning':ko.observable(true),
 									'warnPrinting':ko.observable(false),
 									'gcodeEnabled':ko.observable(false),
