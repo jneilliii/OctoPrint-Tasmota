@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - configurable icons using [fontawesome](http://fontawesome.io/3.2.1/cheatsheet/) class names in settings
 - title attribute on icons are now configurable via new label setting
 
+### Changed
+- default value for index is now blank
+- settings screenshot
+
 ## [0.4.0] - 2018-01-10
 ### Notes
 - requires minimum Tasmota firmware version 5.9.0.
