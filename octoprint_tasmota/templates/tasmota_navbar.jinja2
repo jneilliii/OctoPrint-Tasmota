@@ -1,6 +1,6 @@
 <!-- ko foreach: settings.settings.plugins.tasmota.arrSmartplugs -->
 <!-- ko if: $data.ip().length > 0 -->
-<a class="pull-right" href=#" data-bind="click: $root.toggleRelay,visible: $root.loginState.loggedIn(),style: {color: $data.btnColor()}, attr: {title: $data.ip() + '|' + $data.idx()}" style="display: none;float: left;"><i class="icon-bolt"></i></a>
+<a class="pull-right" href=#" data-bind="click: $root.toggleRelay,visible: $root.loginState.loggedIn(),style: {color: $data.btnColor()}, attr: {title: $data.label()}" style="display: none;float: left;"><i class="icon" data-bind="css: $data.icon()"></i></a>
 <div data-bind="attr: {id: 'tasmota_poweroff_confirmation_dialog_' + $data.ip() + '_' + $data.idx()}" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
