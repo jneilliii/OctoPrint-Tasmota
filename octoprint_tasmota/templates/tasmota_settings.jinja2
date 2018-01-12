@@ -10,7 +10,7 @@
 				<td style="text-align:center"><a href="#" class="icon-trash" data-bind="click: $root.removePlug, visible: $root.settings.settings.plugins.tasmota.arrSmartplugs().length > 1"></a></td>
 			</tr>
 			<tr data-bind='visible: ip().length > 0, attr: {title: ip}' class="info">
-				<td><strong>Icon<small><a href="http://fontawesome.io/3.2.1/cheatsheet/" target="_blank" title="Use fontawesome class name">?</a></small></strong><i class="icon" data-bind="css: icon"></i></td>
+				<td><strong><i class="icon" data-bind="css: icon"></i> <a href="http://fontawesome.io/3.2.1/cheatsheet/" target="_blank" title="Use fontawesome class name">Icon</a></strong></td>
 				<td colspan="2"><input type="text" data-bind='value: icon, uniqueName: true' class="input span12" /></td>
 				<td><strong>Label</strong></td>
 				<td colspan="2"><input type="text" data-bind='value: label, uniqueName: true' class="input span12" /></td>

@@ -56,7 +56,9 @@ $(function() {
 									'currentState':ko.observable('unknown'),
 									'btnColor':ko.observable('#808080'),
 									'username':ko.observable('admin'),
-									'password':ko.observable('')});
+									'password':ko.observable(''),
+									'icon':ko.observable('icon-bolt'),
+									'label':ko.observable('')});
 		}
 		
 		self.removePlug = function(row) {
