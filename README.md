@@ -2,7 +2,7 @@
 
 This plugin is to control ITead Sonoff devices that have been flashed with [Sonoff-Tasmota](https://github.com/arendst/Sonoff-Tasmota) via web calls.
 
-**Requires minimum Tasmota firmware version 5.9.0.**
+**Requires minimum Tasmota firmware version 5.11.0.**
 
 [Changelog](changelog.md)
 
