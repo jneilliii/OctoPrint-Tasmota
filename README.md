@@ -4,6 +4,8 @@ This plugin is to control ITead Sonoff devices that have been flashed with [Sono
 
 **Requires minimum Tasmota firmware version 5.11.0.**
 
+**Single relay devices need to use 1 for index.**
+
 [Changelog](changelog.md)
 
 ##  Screenshots
