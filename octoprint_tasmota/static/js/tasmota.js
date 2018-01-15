@@ -82,16 +82,6 @@ $(function() {
                 console.log('plug data:'+ko.toJSON(plug));
 			}
 			
-			if (data.gcodeon && plug.gcodeEnabled) {
-				setTimeout(function(){self.turnOn(plug)},plug.gcodeOnDelay()*1000);
-				return false;
-			}
-			
-			if (data.gcodeoff && plug.gcodeEnabled) {
-				setTimeout(function(){self.turnOff(plug)},plug.gcodeOffDelay()*1000);
-				return false;
-			}
-			
 			if (plug.currentState != data.currentState) {                
 				plug.currentState(data.currentState)
 				switch(data.currentState) {
