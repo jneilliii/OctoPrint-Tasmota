@@ -13,8 +13,8 @@ $(function() {
 
 		self.arrSmartplugs = ko.observableArray();
 		self.isPrinting = ko.observable(false);
-		self.gcodeOnString = function(data){return 'M80 '+data.ip+' '+data.idx;};
-		self.gcodeOffString = function(data){return 'M81 '+data.ip+' '+data.idx;};
+		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
+		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
 				
 		self.onBeforeBinding = function() {		
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
