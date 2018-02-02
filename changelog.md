@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2018-02-01
+### Fixed
+- GCode off delay.
+
 ## [0.6.0] - 2018-01-14
 ### Fixed
 - Single relay device issues
@@ -51,6 +55,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
+[0.7.0]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.7.0
 [0.6.0]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.6.0
 [0.5.0]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.5.0
 [0.4.0]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.4.0

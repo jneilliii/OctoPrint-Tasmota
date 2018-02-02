@@ -13,7 +13,9 @@ $(function() {
 
 		self.arrSmartplugs = ko.observableArray();
 		self.isPrinting = ko.observable(false);
-		
+		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
+		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
+				
 		self.onBeforeBinding = function() {		
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
         }
@@ -78,16 +80,6 @@ $(function() {
 				console.log(self.settings.settings.plugins.tasmota.arrSmartplugs());
 			    console.log('msg received:'+JSON.stringify(data));
                 console.log('plug data:'+ko.toJSON(plug));
-			}
-			
-			if (data.gcodeon && plug.gcodeEnabled) {
-				setTimeout(function(){self.turnOn(plug)},plug.gcodeOnDelay()*1000);
-				return false;
-			}
-			
-			if (data.gcodeoff && plug.gcodeEnabled) {
-				setTimeout(function(){self.turnOff(plug)},plug.gcodeOffDelay()*1000);
-				return false;
 			}
 			
 			if (plug.currentState != data.currentState) {                

@@ -44,12 +44,14 @@
 			<tr data-bind='visible: gcodeEnabled() && ip().length > 0, attr: {title: ip}'>
 				<td></td>
 				<td colspan="2">GCODE On Delay</td>
-				<td colspan="4"><input type="text" data-bind="value: gcodeOnDelay, uniqueName: true"  class="input span12" /></td>
+				<td colspan="1"><input type="number" min="0" data-bind="value: gcodeOnDelay, uniqueName: true"  class="input span12" /></td>
+				<td colspan="3" style="text-align: center; vertical-align: middle;">Use: <span class="label" title="Use this gcode command to power on relay." data-bind="text: $root.gcodeOnString($data);"></span></td>
 			</tr>
 			<tr data-bind='visible: gcodeEnabled() && ip().length > 0, attr: {title: ip}'>
 				<td></td>
 				<td colspan="2">GCODE Off Delay</td>
-				<td colspan="4"><input type="text" data-bind="value: gcodeOffDelay, uniqueName: true"  class="input span12" /></td>
+				<td colspan="1"><input type="number" min="0" data-bind="value: gcodeOffDelay, uniqueName: true"  class="input span12" /></td>
+				<td colspan="3" style="text-align: center; vertical-align: middle;">Use: <span class="label" title="Use this gcode command to power off relay." data-bind="text: $root.gcodeOffString($data);"></span></td>
 			</tr>
 			<tr data-bind='visible: autoConnect() && ip().length > 0, attr: {title: ip}'>
 				<td></td>
