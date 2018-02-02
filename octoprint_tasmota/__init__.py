@@ -211,7 +211,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
 							return
 						elif cmd.startswith("M81"):
-							t = threading.Timer(int(plug["gcodeOnDelay"]),self.turn_off, [plug["ip"],plug["idx"]],{'username': plug["username"],'password': plug["password"]})
+							t = threading.Timer(int(plug["gcodeOffDelay"]),self.turn_off, [plug["ip"],plug["idx"]],{'username': plug["username"],'password': plug["password"]})
 							t.start()
 							self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
 							return
