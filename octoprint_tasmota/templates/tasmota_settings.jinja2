@@ -69,8 +69,8 @@
 			</tr>
 			<tr>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: gcodeEnabled"/> GCODE Trigger</label></div></td>
-				<td></td>
-				<td></td>
+				<td><span class="label" title="Use this gcode command to power on relay." data-bind="text: $root.gcodeOnString($data),visible: gcodeEnabled"></span></td>
+				<td><span class="label" title="Use this gcode command to power off relay." data-bind="text: $root.gcodeOffString($data),visible: gcodeEnabled"></span></td>
 			</tr>
 			<tr data-bind="visible: gcodeEnabled">
 				<td><div class="controls"><label class="control-label">{{ _('GCODE On Delay') }}</label><input type="text" data-bind="value: gcodeOnDelay" class="input input-small" /></div></td>
