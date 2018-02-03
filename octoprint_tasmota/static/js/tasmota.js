@@ -162,6 +162,7 @@ $(function() {
 
     	self.turnOff = function(data) {
 			if((data.displayWarning() || (self.isPrinting() && data.warnPrinting())) && !$("#TasmotaWarning").is(':visible')){
+				self.selectedPlug(data);
 				$("#TasmotaWarning").modal("show");
 			} else {
 				$("#TasmotaWarning").modal("hide");
