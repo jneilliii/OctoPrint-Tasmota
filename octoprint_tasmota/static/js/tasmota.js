@@ -15,6 +15,7 @@ $(function() {
 		self.isPrinting = ko.observable(false);
 		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
+		self.selectedPlug = ko.observable();
 				
 		self.onBeforeBinding = function() {		
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
@@ -38,29 +39,36 @@ $(function() {
 		}
 		
 		self.addPlug = function() {
-			self.settings.settings.plugins.tasmota.arrSmartplugs.push({'ip':ko.observable(''),
-									'idx':ko.observable('1'),
-									'displayWarning':ko.observable(true),
-									'warnPrinting':ko.observable(false),
-									'gcodeEnabled':ko.observable(false),
-									'gcodeOnDelay':ko.observable(0),
-									'gcodeOffDelay':ko.observable(0),
-									'autoConnect':ko.observable(true),
-									'autoConnectDelay':ko.observable(10.0),
-									'autoDisconnect':ko.observable(true),
-									'autoDisconnectDelay':ko.observable(0),
-									'sysCmdOn':ko.observable(false),
-									'sysRunCmdOn':ko.observable(''),
-									'sysCmdOnDelay':ko.observable(0),
-									'sysCmdOff':ko.observable(false),
-									'sysRunCmdOff':ko.observable(''),
-									'sysCmdOffDelay':ko.observable(0),
-									'currentState':ko.observable('unknown'),
-									'btnColor':ko.observable('#808080'),
-									'username':ko.observable('admin'),
-									'password':ko.observable(''),
-									'icon':ko.observable('icon-bolt'),
-									'label':ko.observable('')});
+			self.selectedPlug({'ip':ko.observable(''),
+			                   'idx':ko.observable('1'),
+			                   'displayWarning':ko.observable(true),
+			                   'warnPrinting':ko.observable(false),
+			                   'gcodeEnabled':ko.observable(false),
+			                   'gcodeOnDelay':ko.observable(0),
+			                   'gcodeOffDelay':ko.observable(0),
+			                   'autoConnect':ko.observable(true),
+			                   'autoConnectDelay':ko.observable(10.0),
+			                   'autoDisconnect':ko.observable(true),
+			                   'autoDisconnectDelay':ko.observable(0),
+			                   'sysCmdOn':ko.observable(false),
+			                   'sysRunCmdOn':ko.observable(''),
+			                   'sysCmdOnDelay':ko.observable(0),
+			                   'sysCmdOff':ko.observable(false),
+			                   'sysRunCmdOff':ko.observable(''),
+			                   'sysCmdOffDelay':ko.observable(0),
+			                   'currentState':ko.observable('unknown'),
+			                   'btnColor':ko.observable('#808080'),
+			                   'username':ko.observable('admin'),
+			                   'password':ko.observable(''),
+			                   'icon':ko.observable('icon-bolt'),
+			                   'label':ko.observable('')});
+			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
+			$("#TasmotaEditor").modal("show");
+		}
+		
+		self.editPlug = function(data) {
+			self.selectedPlug(data);
+			$("#TasmotaEditor").modal("show");
 		}
 		
 		self.removePlug = function(row) {
