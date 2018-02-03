@@ -16,6 +16,7 @@ $(function() {
 		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
 		self.selectedPlug = ko.observable();
+		self.processing = ko.observableArray([]);
 				
 		self.onBeforeBinding = function() {		
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
@@ -75,6 +76,10 @@ $(function() {
 			self.settings.settings.plugins.tasmota.arrSmartplugs.remove(row);
 		}
 		
+		self.cancelClick = function(data) {
+			self.processing.remove(data.ip());
+		}
+		
 		self.onDataUpdaterPluginMessage = function(plugin, data) {
             if (plugin != "tasmota") {
                 return;
@@ -110,9 +115,11 @@ $(function() {
 				}                
                 self.settings.saveData();
 			}
+			self.processing.remove(data.ip);
         };
 		
 		self.toggleRelay = function(data) {
+			self.processing.push(data.ip());
 			switch(data.currentState()){
 				case "on":
 					self.turnOff(data);
@@ -154,11 +161,10 @@ $(function() {
         };
 
     	self.turnOff = function(data) {
-			var dlg_id = "#tasmota_poweroff_confirmation_dialog_" + data.ip().replace( /(:|\.|[|])/g, "\\$1") + "_" + data.idx();
-			if((data.displayWarning() || (self.isPrinting() && data.warnPrinting())) && !$(dlg_id).is(':visible')){
-				$(dlg_id).modal("show");
+			if((data.displayWarning() || (self.isPrinting() && data.warnPrinting())) && !$("#TasmotaWarning").is(':visible')){
+				$("#TasmotaWarning").modal("show");
 			} else {
-				$(dlg_id).modal("hide");
+				$("#TasmotaWarning").modal("hide");
 				if(data.sysCmdOff()){
 					setTimeout(function(){self.sysCommand(data.sysRunCmdOff())},data.sysCmdOffDelay()*1000);
 				}
