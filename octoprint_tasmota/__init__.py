@@ -72,7 +72,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_assets(self):
 		return dict(
-			js=["js/tasmota.js"]
+			js=["js/tasmota.js"],
+			css=["css/tasmota.css"]
 		)
 		
 	##~~ TemplatePlugin mixin
