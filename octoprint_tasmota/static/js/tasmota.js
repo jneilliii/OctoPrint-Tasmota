@@ -15,6 +15,8 @@ $(function() {
 		self.isPrinting = ko.observable(false);
 		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
+		self.selectedPlug = ko.observable();
+		self.processing = ko.observableArray([]);
 				
 		self.onBeforeBinding = function() {		
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
@@ -38,33 +40,44 @@ $(function() {
 		}
 		
 		self.addPlug = function() {
-			self.settings.settings.plugins.tasmota.arrSmartplugs.push({'ip':ko.observable(''),
-									'idx':ko.observable('1'),
-									'displayWarning':ko.observable(true),
-									'warnPrinting':ko.observable(false),
-									'gcodeEnabled':ko.observable(false),
-									'gcodeOnDelay':ko.observable(0),
-									'gcodeOffDelay':ko.observable(0),
-									'autoConnect':ko.observable(true),
-									'autoConnectDelay':ko.observable(10.0),
-									'autoDisconnect':ko.observable(true),
-									'autoDisconnectDelay':ko.observable(0),
-									'sysCmdOn':ko.observable(false),
-									'sysRunCmdOn':ko.observable(''),
-									'sysCmdOnDelay':ko.observable(0),
-									'sysCmdOff':ko.observable(false),
-									'sysRunCmdOff':ko.observable(''),
-									'sysCmdOffDelay':ko.observable(0),
-									'currentState':ko.observable('unknown'),
-									'btnColor':ko.observable('#808080'),
-									'username':ko.observable('admin'),
-									'password':ko.observable(''),
-									'icon':ko.observable('icon-bolt'),
-									'label':ko.observable('')});
+			self.selectedPlug({'ip':ko.observable(''),
+			                   'idx':ko.observable('1'),
+			                   'displayWarning':ko.observable(true),
+			                   'warnPrinting':ko.observable(false),
+			                   'gcodeEnabled':ko.observable(false),
+			                   'gcodeOnDelay':ko.observable(0),
+			                   'gcodeOffDelay':ko.observable(0),
+			                   'autoConnect':ko.observable(true),
+			                   'autoConnectDelay':ko.observable(10.0),
+			                   'autoDisconnect':ko.observable(true),
+			                   'autoDisconnectDelay':ko.observable(0),
+			                   'sysCmdOn':ko.observable(false),
+			                   'sysRunCmdOn':ko.observable(''),
+			                   'sysCmdOnDelay':ko.observable(0),
+			                   'sysCmdOff':ko.observable(false),
+			                   'sysRunCmdOff':ko.observable(''),
+			                   'sysCmdOffDelay':ko.observable(0),
+			                   'currentState':ko.observable('unknown'),
+			                   'btnColor':ko.observable('#808080'),
+			                   'username':ko.observable('admin'),
+			                   'password':ko.observable(''),
+			                   'icon':ko.observable('icon-bolt'),
+			                   'label':ko.observable('')});
+			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
+			$("#TasmotaEditor").modal("show");
+		}
+		
+		self.editPlug = function(data) {
+			self.selectedPlug(data);
+			$("#TasmotaEditor").modal("show");
 		}
 		
 		self.removePlug = function(row) {
 			self.settings.settings.plugins.tasmota.arrSmartplugs.remove(row);
+		}
+		
+		self.cancelClick = function(data) {
+			self.processing.remove(data.ip());
 		}
 		
 		self.onDataUpdaterPluginMessage = function(plugin, data) {
@@ -86,13 +99,10 @@ $(function() {
 				plug.currentState(data.currentState)
 				switch(data.currentState) {
 					case "on":
-						plug.btnColor("#00FF00");
 						break;
 					case "off":
-						plug.btnColor("#FF0000");
 						break;
 					default:
-						plug.btnColor("#808080");
 						new PNotify({
 							title: 'Tasmota Error',
 							text: 'Status ' + plug.currentState() + ' for ' + plug.ip() + '. Double check IP Address\\Hostname in Tasmota Settings.',
@@ -102,9 +112,11 @@ $(function() {
 				}                
                 self.settings.saveData();
 			}
+			self.processing.remove(data.ip);
         };
 		
 		self.toggleRelay = function(data) {
+			self.processing.push(data.ip());
 			switch(data.currentState()){
 				case "on":
 					self.turnOff(data);
@@ -146,11 +158,11 @@ $(function() {
         };
 
     	self.turnOff = function(data) {
-			var dlg_id = "#tasmota_poweroff_confirmation_dialog_" + data.ip().replace( /(:|\.|[|])/g, "\\$1") + "_" + data.idx();
-			if((data.displayWarning() || (self.isPrinting() && data.warnPrinting())) && !$(dlg_id).is(':visible')){
-				$(dlg_id).modal("show");
+			if((data.displayWarning() || (self.isPrinting() && data.warnPrinting())) && !$("#TasmotaWarning").is(':visible')){
+				self.selectedPlug(data);
+				$("#TasmotaWarning").modal("show");
 			} else {
-				$(dlg_id).modal("hide");
+				$("#TasmotaWarning").modal("hide");
 				if(data.sysCmdOff()){
 					setTimeout(function(){self.sysCommand(data.sysRunCmdOff())},data.sysCmdOffDelay()*1000);
 				}

@@ -1,0 +1,16 @@
+#navbar_plugin_tasmota > a > i.on {
+	color: #00FF00 !important;
+}
+
+#navbar_plugin_tasmota > a > i.off {
+	color: #FF0000 !important;
+}
+
+#navbar_plugin_tasmota > a > i.unknown {
+	color: #808080 !important;
+}
+
+#TasmotaEditor table th, #TasmotaEditor table td {
+	border-top: none;
+	vertical-align: top;
+}
