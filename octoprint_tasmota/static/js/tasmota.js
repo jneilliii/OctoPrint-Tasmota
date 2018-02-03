@@ -99,13 +99,10 @@ $(function() {
 				plug.currentState(data.currentState)
 				switch(data.currentState) {
 					case "on":
-						plug.btnColor("#00FF00");
 						break;
 					case "off":
-						plug.btnColor("#FF0000");
 						break;
 					default:
-						plug.btnColor("#808080");
 						new PNotify({
 							title: 'Tasmota Error',
 							text: 'Status ' + plug.currentState() + ' for ' + plug.ip() + '. Double check IP Address\\Hostname in Tasmota Settings.',
