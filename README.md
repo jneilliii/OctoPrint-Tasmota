@@ -32,7 +32,7 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
 - **Index**
   - Index number reprensenting the relay to control. Leave blank for single relay devices.
 - **Icon**
-  - Icon class name from the [fontawesome](http://fontawesome.io/3.2.1/cheatsheet/) library.
+  - Icon class name from the [fontawesome](https://fontawesome.com/v3.2.1/icons/) library.
 - **Label**
   - Title attribute on icon that shows on mouseover.
 - **Username**
