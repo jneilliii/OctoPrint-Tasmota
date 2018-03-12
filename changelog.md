@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2018-03-12
+### Added
+- Show label text when TouchUI interface is enabled. Default UI should not see any change.
+### Updated
+- Screenshots for new settings interface.
+
 ## [0.8.4] - 2018-02-27
 ### Fixed
 - Changed broken link to fontawesome icons.
@@ -75,6 +81,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
+[0.8.5]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.5
 [0.8.4]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.4
 [0.8.3]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.3
 [0.8.2]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.2
