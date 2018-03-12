@@ -13,6 +13,8 @@ This plugin is to control ITead Sonoff devices that have been flashed with [Sono
 
 ![screenshot](settings.png)
 
+![screenshot](tasmota_editor.png)
+
 ## Setup
 
 Install via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
