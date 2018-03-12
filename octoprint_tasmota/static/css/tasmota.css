@@ -10,7 +10,7 @@
 	color: #808080 !important;
 }
 
-#navbar_plugin_tasmota > a > div.label {
+#navbar_plugin_tasmota > a > div.tasmota_label {
 	padding-left: 5px;
 }
 
