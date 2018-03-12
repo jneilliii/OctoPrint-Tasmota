@@ -1,22 +1,17 @@
-#navbar_plugin_tasmota > a > span.on {
+#navbar_plugin_tasmota > a > i.on {
 	color: #00FF00 !important;
-	vertical-align: middle;
-    	width: 20px;
-    	padding: 5px 5px;
 }
 
-#navbar_plugin_tasmota > a > span.off {
+#navbar_plugin_tasmota > a > i.off {
 	color: #FF0000 !important;
-	vertical-align: middle;
-    	width: 20px;
-    	padding: 5px 5px;
 }
 
-#navbar_plugin_tasmota > a > span.unknown {
+#navbar_plugin_tasmota > a > i.unknown {
 	color: #808080 !important;
-	vertical-align: middle;
-    	width: 20px;
-    	padding: 5px 5px;
+}
+
+#navbar_plugin_tasmota > a > div.label {
+	padding-left: 5px;
 }
 
 #TasmotaEditor table th, #TasmotaEditor table td {
