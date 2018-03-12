@@ -11,6 +11,11 @@
 }
 
 #navbar_plugin_tasmota > a > div.tasmota_label {
+	display: none;
+}
+
+/* TouchUI - Show Label */
+#touch #navbar_plugin_tasmota > a > div.tasmota_label {
 	padding-left: 5px;
 	display: inline-block;
 }
