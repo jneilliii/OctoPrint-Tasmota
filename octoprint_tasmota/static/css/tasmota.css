@@ -1,13 +1,18 @@
 #navbar_plugin_tasmota > a > i.on {
-	color: #00FF00 !important;
+	color: #ffffffff !important;
 }
 
 #navbar_plugin_tasmota > a > i.off {
-	color: #FF0000 !important;
+	color: #ffffff77 !important;
 }
 
 #navbar_plugin_tasmota > a > i.unknown {
-	color: #808080 !important;
+	color: #ffffff44 !important;
+}
+
+#navbar_plugin_tasmota > a > i.unknown::after {
+	content: " ?";
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
 #navbar_plugin_tasmota > a > div.tasmota_label {
