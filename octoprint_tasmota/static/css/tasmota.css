@@ -10,6 +10,24 @@
 	color: #ffffff44 !important;
 }
 
+.navbar-inner.default #navbar_plugin_tasmota > a > i.on,
+.navbar-inner.white #navbar_plugin_tasmota > a > i.on,
+.navbar-inner.green #navbar_plugin_tasmota > a > i.on {
+	color: #333333ff !important;
+}
+
+.navbar-inner.default #navbar_plugin_tasmota > a > i.off,
+.navbar-inner.white #navbar_plugin_tasmota > a > i.off,
+.navbar-inner.green #navbar_plugin_tasmota > a > i.off {
+	color: #3337 !important;
+}
+
+.navbar-inner.default #navbar_plugin_tasmota > a > i.unknown,
+.navbar-inner.white #navbar_plugin_tasmota > a > i.unknown,
+.navbar-inner.green #navbar_plugin_tasmota > a > i.unknown {
+	color: #33333344 !important;
+}
+
 #navbar_plugin_tasmota > a > i.unknown::after {
 	content: " ?";
 	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
