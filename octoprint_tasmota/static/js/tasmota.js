@@ -17,6 +17,19 @@ $(function() {
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
 		self.selectedPlug = ko.observable();
 		self.processing = ko.observableArray([]);
+		self.get_color = function(data){
+							console.log(data);
+							switch(data.currentState()) {
+								case "on":
+									return data.on_color();
+									break;
+								case "off":
+									return data.off_color();
+									break;
+								default:
+									return data.unknown_color();
+							}
+						};
 				
 		self.onBeforeBinding = function() {		
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
@@ -58,11 +71,13 @@ $(function() {
 			                   'sysRunCmdOff':ko.observable(''),
 			                   'sysCmdOffDelay':ko.observable(0),
 			                   'currentState':ko.observable('unknown'),
-			                   'btnColor':ko.observable('#808080'),
 			                   'username':ko.observable('admin'),
 			                   'password':ko.observable(''),
 			                   'icon':ko.observable('icon-bolt'),
-			                   'label':ko.observable('')});
+			                   'label':ko.observable(''),
+							   'on_color':ko.observable('#00FF00'),
+							   'off_color':ko.obsrevable('#FF0000'),
+							   'unknown_color':ko.observable('#808080')});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}
@@ -87,7 +102,7 @@ $(function() {
 			
 			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				return ((item.ip().toUpperCase() == data.ip.toUpperCase()) && (item.idx() == data.idx));
-				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','btnColor':'#808080','gcodeEnabled':false};
+				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','gcodeEnabled':false};
             
             if(self.settings.settings.plugins.tasmota.debug_logging()){
 				console.log(self.settings.settings.plugins.tasmota.arrSmartplugs());

@@ -1,4 +1,4 @@
-#navbar_plugin_tasmota > a > i.on {
+/* #navbar_plugin_tasmota > a > i.on {
 	color: #00FF00 !important;
 }
 
@@ -8,11 +8,16 @@
 
 #navbar_plugin_tasmota > a > i.unknown {
 	color: #808080 !important;
-}
+} */
 
 #navbar_plugin_tasmota > a > div.tasmota_label {
 	display: none;
 }
+
+#navbar_plugin_tasmota > a > i.unknown::after {
+	content: " ?";
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}	}
 
 /* TouchUI - Show Label */
 #touch #navbar_plugin_tasmota > a > div.tasmota_label {
