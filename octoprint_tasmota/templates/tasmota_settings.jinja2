@@ -69,6 +69,16 @@
 				<td><div class="controls"><label class="control-label">{{ _('Unknown Color') }}</label><input type="text" class="input input-small" data-bind="value: unknown_color" /></div></td>
 			</tr>
 			<tr>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: use_backlog"/> Use Countdown Timers</label></div></td>
+				<td></td>
+				<td></td>
+			</tr>
+			<tr data-bind="visible: use_backlog">
+				<td><div class="controls"><label class="control-label">{{ _('On Delay Countdown') }}</label><input type="number" min="0" data-bind="value: backlog_on_delay" class="input input-small" /></div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Off Delay Countdown') }}</label><input type="number" min="0" data-bind="value: backlog_off_delay" class="input input-small" /></div></td>
+				<td></td>
+			</tr>
+			<tr>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: displayWarning"/> Warning Prompt</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting"/> Warn While Printing</label></div></td>
 				<td></td>

@@ -77,7 +77,10 @@ $(function() {
 			                   'label':ko.observable(''),
 							   'on_color':ko.observable('#00FF00'),
 							   'off_color':ko.obsrevable('#FF0000'),
-							   'unknown_color':ko.observable('#808080')});
+							   'unknown_color':ko.observable('#808080'),
+							   'use_backlog':ko.observable(false),
+							   'backlog_on_delay':ko.observable(0),
+							   'backlog_off_delay':ko.observable(0)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}
@@ -166,7 +169,8 @@ $(function() {
 					ip: data.ip(),
 					idx: data.idx(),
 					username: data.username(),
-					password: data.password()
+					password: data.password(),
+					backlog_delay: data.backlog_on_delay()
                 }),
                 contentType: "application/json; charset=UTF-8"
             });
@@ -200,7 +204,8 @@ $(function() {
 					ip: data.ip(),
 					idx: data.idx(),
 					username: data.username(),
-					password: data.password()
+					password: data.password(),
+					backlog_delay: data.backlog_off_delay()
 			}),
 			contentType: "application/json; charset=UTF-8"
 			});		
