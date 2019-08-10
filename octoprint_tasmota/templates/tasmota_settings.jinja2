@@ -45,6 +45,19 @@
 		</label>
 	</div>
 </div>
+<div class="control-group">
+	<div class="controls">
+		<label class="checkbox">
+		<input type="checkbox" data-bind="checked: settings.settings.plugins.tasmota.polling_enabled"> Enable status polling.
+		</label>
+	</div>
+</div>
+<div class="control-group" data-bind="visible: settings.settings.plugins.tasmota.polling_enabled">
+	<div class="controls">
+		<label class="control-label">{{ _('Minutes between checks') }}</label>
+		<input type="number" min="0" class="input input-small" data-bind="value: settings.settings.plugins.tasmota.polling_interval" />
+	</div>
+</div>
 
 <div id="TasmotaEditor" data-bind="with: selectedPlug" class="modal hide fade">
 	<div class="modal-header">
