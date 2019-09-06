@@ -4,12 +4,11 @@ from __future__ import absolute_import
 import octoprint.plugin
 from octoprint.server import user_permission
 import socket
-import json
 import time
 import logging
 import os
 import re
-import urllib2
+import requests
 import threading
 
 class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
@@ -94,12 +93,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
 		try:
 			if int(backlog_delay) > 0:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=backlog%20delay%20" + str(int(backlog_delay)*10) + "%3BPower" + str(plugidx) + "%20on%3B").read()
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=backlog%20delay%20" + str(int(backlog_delay)*10) + "%3BPower" + str(plugidx) + "%20on%3B")
 				response = dict()
 				response["POWER%s" % plugidx] = "ON"
 			else:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20on").read()
-				response = json.loads(webresponse)
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Power" + str(plugidx) + "%20on")
+				response = webresponse.json()
 			chk = response["POWER%s" % plugidx]
 		except:
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
@@ -109,9 +108,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Response: %s" % response)
 		if self._settings.get(['singleRelay']):
 			plugidx = '1'
-		if chk == "ON":
+		if chk.upper() == "ON":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
-		elif chk == "OFF":
+		elif chk.upper() == "OFF":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
 		else:
 			self._tasmota_logger.debug(response)
@@ -123,12 +122,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Turning off %s index %s." % (plugip, plugidx))
 		try:
 			if int(backlog_delay) > 0:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=backlog%20delay%20" + str(int(backlog_delay)*10) + "%3BPower" + str(plugidx) + "%20off%3B").read()
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=backlog%20delay%20" + str(int(backlog_delay)*10) + "%3BPower" + str(plugidx) + "%20off%3B")
 				response = dict()
 				response["POWER%s" % plugidx] = "OFF"
 			else:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx) + "%20off").read()
-				response = json.loads(webresponse)
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Power" + str(plugidx) + "%20off")
+				response = webresponse.json()
 			chk = response["POWER%s" % plugidx]
 		except:
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
@@ -138,9 +137,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Response: %s" % response)
 		if self._settings.get(['singleRelay']):
 			plugidx = '1'
-		if chk == "ON":
+		if chk.upper() == "ON":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
-		elif chk == "OFF":
+		elif chk.upper() == "OFF":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
 		else:
 			self._tasmota_logger.debug(response)
@@ -152,9 +151,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
-				webresponse = urllib2.urlopen("http://" + plugip + "/cm?user=" + username + "&password=" + password + "&cmnd=Power" + str(plugidx)).read()
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Power" + str(plugidx))
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
-				response = json.loads(webresponse)
+				response = webresponse.json()
 				chk = response["POWER%s" % plugidx]
 			except:
 				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
@@ -164,9 +163,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, chk))
 			if self._settings.get(['singleRelay']):
 				plugidx = '1'
-			if chk == "ON":
+			if chk.upper() == "ON":
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
-			elif chk == "OFF":
+			elif chk.upper() == "OFF":
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
 			else:
 				self._tasmota_logger.debug(response)
@@ -266,6 +265,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 # ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
 # can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
 __plugin_name__ = "Tasmota"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 def __plugin_load__():
 	global __plugin_implementation__
