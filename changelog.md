@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2019-10-06
+### Added
+- Python 3 compatibility for future OctoPrint release.
+### Fixed
+- ON/OFF comparison in cases where the response is not uppercase by default.
+- Resolve issues with special characters in passwords.
+
+## [0.8.6] - 2019-08-11
+### Added
+- configurable color options for the navbar icons.
+- countdown timer that utilizes the backlog command with delay to allow for powering off a plug after the pi has been shutdown using the system command option.
+- polling option to check status based on configured interval.
+
 ## [0.8.5] - 2018-03-12
 ### Added
 - Show label text when TouchUI interface is enabled. Default UI should not see any change.
@@ -81,6 +94,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
+[0.8.7]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.7
+[0.8.6]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.6
 [0.8.5]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.5
 [0.8.4]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.4
 [0.8.3]: https://github.com/jneilliii/OctoPrint-Tasmota/tree/0.8.3

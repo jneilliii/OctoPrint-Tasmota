@@ -113,7 +113,7 @@ $(function() {
 				console.log('plug data:'+ko.toJSON(plug));
 			}
 
-			if (plug.currentState != data.currentState) {				
+			if (plug.currentState != data.currentState) {
 				plug.currentState(data.currentState)
 				switch(data.currentState) {
 					case "on":
