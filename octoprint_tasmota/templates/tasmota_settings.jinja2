@@ -15,6 +15,7 @@
 			<td style="text-align:center">
 				<i class="icon" data-bind="css: {'icon-check': displayWarning(),'icon-check-empty': !displayWarning()}" title="Warning Prompt" />
 				<i class="icon" data-bind="css: {'icon-check': warnPrinting(),'icon-check-empty': !warnPrinting()}" title="Warn While Printing" />
+				<i class="icon" data-bind="css: {'icon-check': thermal_runaway(),'icon-check-empty': !thermal_runaway()}" title="Thermal Runaway" />
 				<i class="icon" data-bind="css: {'icon-check': autoConnect(),'icon-check-empty': !autoConnect()}" title="Auto Connect" />
 				<i class="icon" data-bind="css: {'icon-check': autoDisconnect(),'icon-check-empty': !autoDisconnect()}" title="Auto Disconnect" />
 				<i class="icon" data-bind="css: {'icon-check': gcodeEnabled(),'icon-check-empty': !gcodeEnabled()}" title="GCODE Trigger" />
@@ -30,6 +31,24 @@
 		</tr>
 	</tbody>
 </table>
+
+<div class="control-group">
+	<div class="controls">
+		<label class="checkbox">
+		<input type="checkbox" data-bind="checked: settings.settings.plugins.tasmota.thermal_runaway_monitoring" /> Enable thermal runaway monitoring.
+		</label>
+	</div>
+</div>
+<div class="control-group" data-bind="visible: settings.settings.plugins.tasmota.thermal_runaway_monitoring">
+	<div class="controls">
+		<label class="control-label">{{ _('Max Bed Temp') }}</label>
+		<input type="number" min="0" class="input input-small" data-bind="value: settings.settings.plugins.tasmota.thermal_runaway_max_bed" />
+	</div>
+	<div class="controls">
+		<label class="control-label">{{ _('Max Extruder Temp') }}</label>
+		<input type="number" min="0" class="input input-small" data-bind="value: settings.settings.plugins.tasmota.thermal_runaway_max_extruder" />
+	</div>
+</div>
 
 <div class="control-group">
 	<div class="controls">
@@ -94,7 +113,7 @@
 			<tr>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: displayWarning"/> Warning Prompt</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting"/> Warn While Printing</label></div></td>
-				<td></td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway"/> Thermal Runaway</label></div></td>
 			</tr>
 			<tr>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: autoConnect"/> Auto Connect</label><input type="text" data-bind="value: autoConnectDelay,visible: autoConnect" class="input input-small" /></div></td>

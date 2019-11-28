@@ -80,7 +80,8 @@ $(function() {
 							   'unknown_color':ko.observable('#808080'),
 							   'use_backlog':ko.observable(false),
 							   'backlog_on_delay':ko.observable(0),
-							   'backlog_off_delay':ko.observable(0)});
+							   'backlog_off_delay':ko.observable(0),
+							   'thermal_runaway':ko.observable(false)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}
