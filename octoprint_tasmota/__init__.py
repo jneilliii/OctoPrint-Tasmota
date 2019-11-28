@@ -46,8 +46,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			polling_enabled = False,
 			polling_interval = 0,
 			thermal_runaway_monitoring = False,
-			thermal_runaway_max_bed = 0,
-			thermal_runaway_max_extruder = 0,
+			thermal_runaway_max_bed = 120,
+			thermal_runaway_max_extruder = 300,
 			arrSmartplugs = [{'ip':'','displayWarning':True,'idx':'1','warnPrinting':False,'gcodeEnabled':False,'gcodeOnDelay':0,'gcodeOffDelay':0,'autoConnect':True,'autoConnectDelay':10.0,'autoDisconnect':True,'autoDisconnectDelay':0,'sysCmdOn':False,'sysRunCmdOn':'','sysCmdOnDelay':0,'sysCmdOff':False,'sysRunCmdOff':'','sysCmdOffDelay':0,'currentState':'unknown','username':'admin','password':'','icon':'icon-bolt','label':'','on_color':'#00FF00','off_color':'#FF0000','unknown_color':'#808080','use_backlog':False,'backlog_on_delay':0,'backlog_off_delay':0,'thermal_runaway':False}]
 		)
 
