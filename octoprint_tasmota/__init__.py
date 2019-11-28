@@ -267,7 +267,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 						self.turn_off(plug["ip"],plug["idx"],username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_off_delay"])
 
 	def monitor_temperatures(self, comm, parsed_temps):
-		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered = False:
+		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered == False:
 			# Run inside it's own thread to prevent communication blocking
 			t = threading.Timer(0,self.check_temps,[parsed_temps])
 			t.start()
