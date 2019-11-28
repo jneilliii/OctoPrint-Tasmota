@@ -217,10 +217,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if plug["warnPrinting"] and self._printer.is_printing():
 			self._tasmota_logger.info("Not powering off %s because printer is printing." % plug["label"])
 		else:
-			self.turn_off(plug["ip"], plug["idx"]], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
+			self.turn_off(plug["ip"], plug["idx"], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
 
 	def gcode_on(self, plug):
-		self.turn_on(plug["ip"], plug["idx"]], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
+		self.turn_on(plug["ip"], plug["idx"], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
 
 
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
