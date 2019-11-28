@@ -219,7 +219,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		else:
 			self.turn_off(plug["ip"], plug["idx"]], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
 
-	def gcode_on(self, plugip, plugidx, username="admin", password="", backlog_delay=0):
+	def gcode_on(self, plug):
 		self.turn_on(plug["ip"], plug["idx"]], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
 
 
