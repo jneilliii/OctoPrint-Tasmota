@@ -20,6 +20,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def __init__(self):
 		self._logger = logging.getLogger("octoprint.plugins.tasmota")
 		self._tasmota_logger = logging.getLogger("octoprint.plugins.tasmota.debug")
+		self.thermal_runaway_triggered = False
 
 	##~~ StartupPlugin mixin
 
@@ -253,21 +254,20 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ Temperatures received hook
 
 	def check_temps(self, parsed_temps):
-		thermal_runaway_triggered = False
 		for k, v in parsed_temps.items():
 			if k == "B" and v[0] > int(self._settings.get(["thermal_runaway_max_bed"])):
 				self._tasmota_logger.debug("Max bed temp reached, shutting off plugs.")
-				thermal_runaway_triggered = True
+				self.thermal_runaway_triggered = True
 			if k.startswith("T") and v[0] > int(self._settings.get(["thermal_runaway_max_extruder"])):
 				self._tasmota_logger.debug("Extruder max temp reached, shutting off plugs.")
-				thermal_runaway_triggered = True
-			if thermal_runaway_triggered == True:
+				self.thermal_runaway_triggered = True
+			if self.thermal_runaway_triggered == True:
 				for plug in self._settings.get(['arrSmartplugs']):
 					if plug["thermal_runaway"] == True:
 						self.turn_off(plug["ip"],plug["idx"],username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_off_delay"])
 
 	def monitor_temperatures(self, comm, parsed_temps):
-		if self._settings.get(["thermal_runaway_monitoring"]):
+		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered = False:
 			# Run inside it's own thread to prevent communication blocking
 			t = threading.Timer(0,self.check_temps,[parsed_temps])
 			t.start()
