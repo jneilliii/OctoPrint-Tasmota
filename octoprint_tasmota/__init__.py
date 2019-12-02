@@ -20,6 +20,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def __init__(self):
 		self._logger = logging.getLogger("octoprint.plugins.tasmota")
 		self._tasmota_logger = logging.getLogger("octoprint.plugins.tasmota.debug")
+		self.thermal_runaway_triggered = False
 
 	##~~ StartupPlugin mixin
 
@@ -45,7 +46,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			debug_logging = False,
 			polling_enabled = False,
 			polling_interval = 0,
-			arrSmartplugs = [{'ip':'','displayWarning':True,'idx':'1','warnPrinting':False,'gcodeEnabled':False,'gcodeOnDelay':0,'gcodeOffDelay':0,'autoConnect':True,'autoConnectDelay':10.0,'autoDisconnect':True,'autoDisconnectDelay':0,'sysCmdOn':False,'sysRunCmdOn':'','sysCmdOnDelay':0,'sysCmdOff':False,'sysRunCmdOff':'','sysCmdOffDelay':0,'currentState':'unknown','username':'admin','password':'','icon':'icon-bolt','label':'','on_color':'#00FF00','off_color':'#FF0000','unknown_color':'#808080','use_backlog':False,'backlog_on_delay':0,'backlog_off_delay':0}],
+			thermal_runaway_monitoring = False,
+			thermal_runaway_max_bed = 120,
+			thermal_runaway_max_extruder = 300,
+			arrSmartplugs = [{'ip':'','displayWarning':True,'idx':'1','warnPrinting':False,'gcodeEnabled':False,'gcodeOnDelay':0,'gcodeOffDelay':0,'autoConnect':True,'autoConnectDelay':10.0,'autoDisconnect':True,'autoDisconnectDelay':0,'sysCmdOn':False,'sysRunCmdOn':'','sysCmdOnDelay':0,'sysCmdOff':False,'sysRunCmdOff':'','sysCmdOffDelay':0,'currentState':'unknown','username':'admin','password':'','icon':'icon-bolt','label':'','on_color':'#00FF00','off_color':'#FF0000','unknown_color':'#808080','use_backlog':False,'backlog_on_delay':0,'backlog_off_delay':0,'thermal_runaway':False}]
 		)
 
 	def on_settings_save(self, data):
@@ -61,7 +65,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._tasmota_logger.setLevel(logging.INFO)
 
 	def get_settings_version(self):
-		return 4
+		return 5
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < self.get_settings_version():
@@ -210,6 +214,16 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	##~~ Gcode processing hook
 
+	def gcode_off(self, plug):
+		if plug["warnPrinting"] and self._printer.is_printing():
+			self._tasmota_logger.info("Not powering off %s because printer is printing." % plug["label"])
+		else:
+			self.turn_off(plug["ip"], plug["idx"], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
+
+	def gcode_on(self, plug):
+		self.turn_on(plug["ip"], plug["idx"], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
+
+
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode:
 			if cmd.startswith("M8") and cmd.count(" ") >= 2:
@@ -221,7 +235,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							if plug["sysCmdOn"] and plug["sysRunCmdOn"] != "":
 								s = threading.Timer(int(plug["sysCmdOnDelay"]), os.system, [plug["sysRunCmdOn"]])
 								s.start()
-							t = threading.Timer(int(plug["gcodeOnDelay"]),self.turn_on, [plug["ip"],plug["idx"]],{'username': plug["username"],'password': plug["password"],'backlog_delay': plug["backlog_on_delay"]})
+							t = threading.Timer(int(plug["gcodeOnDelay"]),self.gcode_on, [plug])
 							t.start()
 							self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
 							return
@@ -229,13 +243,35 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							if plug["sysCmdOff"] and plug["sysRunCmdOff"] != "":
 								s = threading.Timer(int(plug["sysCmdOffDelay"]), os.system, [plug["sysRunCmdOff"]])
 								s.start()
-							t = threading.Timer(int(plug["gcodeOffDelay"]),self.turn_off, [plug["ip"],plug["idx"]],{'username': plug["username"],'password': plug["password"],'backlog_delay': plug["backlog_off_delay"]})
+							t = threading.Timer(int(plug["gcodeOffDelay"]),self.gcode_off, [plug])
 							t.start()
 							self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
 							return
 						else:
 							return
 			return
+
+	##~~ Temperatures received hook
+
+	def check_temps(self, parsed_temps):
+		for k, v in parsed_temps.items():
+			if k == "B" and v[0] > int(self._settings.get(["thermal_runaway_max_bed"])):
+				self._tasmota_logger.debug("Max bed temp reached, shutting off plugs.")
+				self.thermal_runaway_triggered = True
+			if k.startswith("T") and v[0] > int(self._settings.get(["thermal_runaway_max_extruder"])):
+				self._tasmota_logger.debug("Extruder max temp reached, shutting off plugs.")
+				self.thermal_runaway_triggered = True
+			if self.thermal_runaway_triggered == True:
+				for plug in self._settings.get(['arrSmartplugs']):
+					if plug["thermal_runaway"] == True:
+						self.turn_off(plug["ip"],plug["idx"],username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_off_delay"])
+
+	def monitor_temperatures(self, comm, parsed_temps):
+		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered == False:
+			# Run inside it's own thread to prevent communication blocking
+			t = threading.Timer(0,self.check_temps,[parsed_temps])
+			t.start()
+		return parsed_temps
 
 
 	##~~ Softwareupdate hook
@@ -274,6 +310,7 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.processGCODE,
+		"octoprint.comm.protocol.temperatures.received": __plugin_implementation__.monitor_temperatures,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
 	}
 
