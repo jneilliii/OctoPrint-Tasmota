@@ -157,8 +157,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if plugip != "":
 			try:
 				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Status%200")
-				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
 				response = webresponse.json()
+				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, response))
 				#chk = response["POWER%s" % plugidx]
 				chk = self.lookup(response,*["StatusSTS","POWER" + plugidx])
 			except:
