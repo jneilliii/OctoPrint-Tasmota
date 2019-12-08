@@ -164,7 +164,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				if chk is None:
 					chk = "UNKNOWN"
 				energy_data = self.lookup(response,*["StatusSNS","Energy"])
-				sensor_data = self.lookup(response,*["StatusSNS","DHT11"]))
+				sensor_data = self.lookup(response,*["StatusSNS","DHT11"])
 				if energy_data is not None:
 					self._logger.info("%s" % energy_data)
 				if sensor_data is not None:
