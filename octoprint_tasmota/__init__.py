@@ -161,6 +161,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, response))
 				#chk = response["POWER%s" % plugidx]
 				chk = self.lookup(response,*["StatusSTS","POWER" + plugidx])
+				if chk is None:
+					chk = "UNKNOWN"
 			except:
 				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 				response = "unknown error with %s." % plugip
