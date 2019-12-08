@@ -10,6 +10,7 @@ import os
 import re
 import requests
 import threading
+import sqlite3
 
 class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							octoprint.plugin.AssetPlugin,
@@ -155,10 +156,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
-				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Power" + str(plugidx))
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Status%200")
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, webresponse))
 				response = webresponse.json()
-				chk = response["POWER%s" % plugidx]
+				#chk = response["POWER%s" % plugidx]
+				chk = self.lookup(response,*["StatusSTS","POWER" + plugidx])
 			except:
 				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 				response = "unknown error with %s." % plugip
@@ -272,6 +274,18 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			t = threading.Timer(0,self.check_temps,[parsed_temps])
 			t.start()
 		return parsed_temps
+
+	##~~ Utility functions
+
+	def lookup(self, dic, key, *keys):
+		if keys:
+			return self.lookup(dic.get(key, {}), *keys)
+		return dic.get(key)
+
+	def plug_search(self, list, key, value): 
+		for item in list: 
+			if item[key] == value: 
+				return item
 
 
 	##~~ Softwareupdate hook
