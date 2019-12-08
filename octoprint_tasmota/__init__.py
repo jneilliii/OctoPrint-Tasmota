@@ -36,6 +36,21 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.setLevel(logging.DEBUG if self._settings.get_boolean(["debug_logging"]) else logging.INFO)
 		self._tasmota_logger.propagate = False
 
+		self.energy_db_path = os.path.join(self.get_plugin_data_folder(),"energy_data.db")
+		if not os.path.exists(self.energy_db_path):
+			db = sqlite3.connect(self.energy_db_path)
+			cursor = db.cursor()
+			cursor.execute('''CREATE TABLE energy_data(id INTEGER PRIMARY KEY, ip TEXT, idx TEXT, timestamp TEXT, current REAL, power REAL, total REAL, voltage REAL)''')
+			db.commit()
+			db.close()
+
+		self.sensor_db_path = os.path.join(self.get_plugin_data_folder(),"sensor_data.db")
+		if not os.path.exists(self.sensor_db_path):
+			db = sqlite3.connect(self.sensor_db_path)
+			cursor = db.cursor()
+			cursor.execute('''CREATE TABLE sensor_data(id INTEGER PRIMARY KEY, ip TEXT, idx TEXT, timestamp TEXT, temperature REAL, humidity REAL)''')
+			db.commit()
+			db.close()
 	def on_after_startup(self):
 		self._logger.info("Tasmota loaded!")
 
@@ -166,9 +181,16 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				energy_data = self.lookup(response,*["StatusSNS","Energy"])
 				sensor_data = self.lookup(response,*["StatusSNS","DHT11"])
 				if energy_data is not None:
-					self._logger.info("%s" % energy_data)
+					self._tasmota_logger.debug("%s" % energy_data)
 				if sensor_data is not None:
-					self._logger.info("%s" % sensor_data)
+					t = self.lookup(response,*["StatusSNS","DHT11","Temperature"])
+					h = self.lookup(response,*["StatusSNS","DHT11","Humidity"])
+					self._tasmota_logger.debug("%s" % sensor_data)
+					db = sqlite3.connect(self.sensor_db_path)
+					cursor = db.cursor()
+					cursor.execute('''INSERT INTO sensor_data(ip, idx, timestamp, temperature, humidity) VALUES(?,?,?,?,?)''', [plugip,plugidx,today.isoformat(' '),t,h])
+					db.commit()
+					db.close()
 			except:
 				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 				response = "unknown error with %s." % plugip
