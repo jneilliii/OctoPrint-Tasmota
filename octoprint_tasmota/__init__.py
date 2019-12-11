@@ -66,7 +66,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			thermal_runaway_monitoring = False,
 			thermal_runaway_max_bed = 120,
 			thermal_runaway_max_extruder = 300,
-			arrSmartplugs = [{'ip':'','displayWarning':True,'idx':'1','warnPrinting':False,'gcodeEnabled':False,'gcodeOnDelay':0,'gcodeOffDelay':0,'autoConnect':True,'autoConnectDelay':10.0,'autoDisconnect':True,'autoDisconnectDelay':0,'sysCmdOn':False,'sysRunCmdOn':'','sysCmdOnDelay':0,'sysCmdOff':False,'sysRunCmdOff':'','sysCmdOffDelay':0,'currentState':'unknown','username':'admin','password':'','icon':'icon-bolt','label':'','on_color':'#00FF00','off_color':'#FF0000','unknown_color':'#808080','use_backlog':False,'backlog_on_delay':0,'backlog_off_delay':0,'thermal_runaway':False}]
+			arrSmartplugs = [{'ip':'','displayWarning':True,'idx':'1','warnPrinting':False,'gcodeEnabled':False,'gcodeOnDelay':0,'gcodeOffDelay':0,'autoConnect':True,'autoConnectDelay':10.0,'autoDisconnect':True,'autoDisconnectDelay':0,'sysCmdOn':False,'sysRunCmdOn':'','sysCmdOnDelay':0,'sysCmdOff':False,'sysRunCmdOff':'','sysCmdOffDelay':0,'currentState':'unknown','username':'admin','password':'','icon':'icon-bolt','label':'','label_extended':'','on_color':'#00FF00','off_color':'#FF0000','unknown_color':'#808080','sensor_identifier':'','use_backlog':False,'backlog_on_delay':0,'backlog_off_delay':0,'thermal_runaway':False}]
 		)
 
 	def on_settings_save(self, data):
@@ -82,7 +82,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._tasmota_logger.setLevel(logging.INFO)
 
 	def get_settings_version(self):
-		return 5
+		return 6
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < self.get_settings_version():
@@ -94,7 +94,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_assets(self):
 		return dict(
-			js=["js/tasmota.js"],
+			js=["js/tasmota.js","js/knockout-bootstrap.min.js"],
 			css=["css/tasmota.css"]
 		)
 
@@ -172,6 +172,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
+				plug = self.plug_search(self._settings.get(["arrSmartplugs"]),"ip",plugip,"idx",plugidx)
+				self._tasmota_logger.debug(plug)
 				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Status%200")
 				response = webresponse.json()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, response))
@@ -179,19 +181,33 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				chk = self.lookup(response,*["StatusSTS","POWER" + plugidx])
 				if chk is None:
 					chk = "UNKNOWN"
-				energy_data = self.lookup(response,*["StatusSNS","Energy"])
-				sensor_data = self.lookup(response,*["StatusSNS","DHT11"])
+				energy_data = self.lookup(response,*["StatusSNS","ENERGY"])
 				if energy_data is not None:
-					self._tasmota_logger.debug("%s" % energy_data)
-				if sensor_data is not None:
-					t = self.lookup(response,*["StatusSNS","DHT11","Temperature"])
-					h = self.lookup(response,*["StatusSNS","DHT11","Humidity"])
-					self._tasmota_logger.debug("%s" % sensor_data)
-					db = sqlite3.connect(self.sensor_db_path)
+					today = datetime.today()
+					c = self.lookup(response,*["StatusSNS","ENERGY","Current"])
+					p = self.lookup(response,*["StatusSNS","ENERGY","Power"])
+					t = self.lookup(response,*["StatusSNS","ENERGY","Total"])
+					v = self.lookup(response,*["StatusSNS","ENERGY","Voltage"])
+					self._tasmota_logger.debug("Energy Data: %s" % energy_data)
+					db = sqlite3.connect(self.energy_db_path)
 					cursor = db.cursor()
-					cursor.execute('''INSERT INTO sensor_data(ip, idx, timestamp, temperature, humidity) VALUES(?,?,?,?,?)''', [plugip,plugidx,today.isoformat(' '),t,h])
+					cursor.execute('''INSERT INTO energy_data(ip, idx, timestamp, current, power, total, voltage) VALUES(?,?,?,?,?,?,?)''', [plugip,plugidx,today.isoformat(' '),c,p,t,v])
 					db.commit()
 					db.close()
+				if plug["sensor_identifier"] != "":
+					sensor_data = self.lookup(response,*["StatusSNS",plug["sensor_identifier"]])
+					if sensor_data is not None:
+						today = datetime.today()
+						t = self.lookup(response,*["StatusSNS","DHT11","Temperature"])
+						h = self.lookup(response,*["StatusSNS","DHT11","Humidity"])
+						self._tasmota_logger.debug("Sensor Data: %s" % sensor_data)
+						db = sqlite3.connect(self.sensor_db_path)
+						cursor = db.cursor()
+						cursor.execute('''INSERT INTO sensor_data(ip, idx, timestamp, temperature, humidity) VALUES(?,?,?,?,?)''', [plugip,plugidx,today.isoformat(' '),t,h])
+						db.commit()
+						db.close()
+				else:
+					sensor_data = None
 			except:
 				self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
 				response = "unknown error with %s." % plugip
@@ -201,9 +217,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if self._settings.get(['singleRelay']):
 				plugidx = '1'
 			if chk.upper() == "ON":
-				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
+				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx,energy_data=energy_data,sensor_data=sensor_data))
 			elif chk.upper() == "OFF":
-				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
+				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx,energy_data=energy_data,sensor_data=sensor_data))
 			else:
 				self._tasmota_logger.debug(response)
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
@@ -313,9 +329,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return self.lookup(dic.get(key, {}), *keys)
 		return dic.get(key)
 
-	def plug_search(self, list, key, value): 
+	def plug_search(self, list, key1, value1, key2, value2): 
 		for item in list: 
-			if item[key] == value: 
+			if item[key1] == value1 and item[key2] == value2: 
 				return item
 
 

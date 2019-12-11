@@ -75,8 +75,10 @@ $(function() {
 							   'password':ko.observable(''),
 							   'icon':ko.observable('icon-bolt'),
 							   'label':ko.observable(''),
+							   'label_extended':ko.observable(''),
 							   'on_color':ko.observable('#00FF00'),
 							   'off_color':ko.observable('#FF0000'),
+							   'sensor_identifier':ko.observable(''),
 							   'unknown_color':ko.observable('#808080'),
 							   'use_backlog':ko.observable(false),
 							   'backlog_on_delay':ko.observable(0),
@@ -103,6 +105,7 @@ $(function() {
 			if (plugin != "tasmota") {
 				return;
 			}
+			console.log('msg received:'+JSON.stringify(data));
 
 			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				return ((item.ip().toUpperCase() == data.ip.toUpperCase()) && (item.idx() == data.idx));
@@ -113,6 +116,19 @@ $(function() {
 				console.log('msg received:'+JSON.stringify(data));
 				console.log('plug data:'+ko.toJSON(plug));
 			}
+
+			var tooltip = plug.label();
+			if(data.sensor_data) {
+				for(k in data.sensor_data) {
+					tooltip += '<br>' + k + ': ' + data.sensor_data[k]
+				}
+			}
+			if(data.energy_data) {
+				for(k in data.energy_data) {
+					tooltip += '<br>' + k + ': ' + data.energy_data[k]
+				}
+			}
+			plug.label_extended = ko.observable(tooltip);
 
 			if (plug.currentState != data.currentState) {
 				plug.currentState(data.currentState)

@@ -14,6 +14,10 @@
 	display: none;
 }
 
+#navbar_plugin_tasmota > div.tooltip > div.tooltip-inner {
+	text-align: left;
+}
+
 #navbar_plugin_tasmota > a > i.unknown::after {
 	content: " ?";
 	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
