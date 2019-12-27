@@ -52,6 +52,90 @@ $(function() {
 			}
 		}
 
+		self.onTabChange = function(current, previous) {
+			if (current === "#tab_plugin_tasmota") {
+				$.ajax({
+				url: API_BASEURL + "plugin/tasmota",
+				type: "POST",
+				dataType: "json",
+				data: JSON.stringify({
+					command: "getEnergyData"
+				}),
+				contentType: "application/json; charset=UTF-8"
+				}).done(function(data){
+						//update plotly graph here.
+/* 						var energy_trace_total = data['energy_data'].map(function(item){return item;});
+						var energy_trace_current = data['energy_data'].map(function(item){return item;});
+						var energy_trace_power = data['energy_data'].map(function(item){return item;});
+						var layout_energy = {title:'Tasmota Energy Data',
+									grid: {rows: 2, columns: 1, pattern: 'independent'},
+									xaxis: {
+										showticklabels: false,
+										anchor: 'x'
+									},
+									yaxis: {
+										title: 'Total (kWh)',
+										hoverformat: '.3f kWh',
+										tickangle: 45,
+										tickfont: {
+											size: 10
+										},
+										tickformat: '.2f',
+										anchor: 'y'
+									},
+									xaxis2: {
+										anchor: 'y2'
+									},
+									yaxis2: {
+										title: 'Current (Amp)',
+										hoverformat: '.3f',
+										anchor: 'x2',
+										tickangle: 45,
+										tickfont: {
+											size: 10
+										},
+										tickformat: '.2f'
+									},
+									xaxis3: {
+										overlaying: 'x2',
+										anchor: 'y3',
+										showticklabels: false
+									},
+									yaxis3: {
+										overlaying: 'y2',
+										side: 'right',
+										title: 'Power (W)',
+										hoverformat: '.3f',
+										anchor: 'x3',
+										tickangle: -45,
+										tickfont: {
+											size: 10
+										},
+										tickformat: '.2f'
+									}
+								};
+
+						var energy_plot_data = [energy_trace_total,energy_trace_current,energy_trace_power]
+						var sensor_plot_data = []
+						Plotly.react('tasmota_energy_graph',energy_plot_data,layout_energy);
+						Plotly.react('tasmota_sensor_graph',sensor_plot_data,layout_energy); */
+						var remapped_energy_data = data.energy_data.map(function(item, idx, arr){
+															var new_item = {};
+															new_item['name'] = item[0];
+															new_item['x'] = item[1].split(',').slice(-100);
+															new_item['y'] = item[2].split(',').slice(-100);
+															new_item['y2'] = item[3].split(',').slice(-100);
+															new_item['y3'] = item[4].split(',').slice(-100); 
+															new_item['mode'] = 'lines';
+															return new_item;
+														});
+						Plotly.react('tasmota_energy_graph', remapped_energy_data);
+						console.log(remapped_energy_data);
+						
+					});
+				}
+			};
+
 		self.addPlug = function() {
 			self.selectedPlug({'ip':ko.observable(''),
 							   'idx':ko.observable('1'),
@@ -310,11 +394,7 @@ $(function() {
 	// view model class, parameters for constructor, container to bind to
 	OCTOPRINT_VIEWMODELS.push([
 		tasmotaViewModel,
-
-		// e.g. loginStateViewModel, settingsViewModel, ...
 		["settingsViewModel","loginStateViewModel"],
-
-		// "#navbar_plugin_tasmota","#settings_plugin_tasmota"
 		["#navbar_plugin_tasmota","#settings_plugin_tasmota"]
 	]);
 });

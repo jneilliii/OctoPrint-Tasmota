@@ -225,7 +225,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 
 	def get_api_commands(self):
-		return dict(turnOn=["ip","idx"],turnOff=["ip","idx"],checkStatus=["ip","idx"],connectPrinter=[],disconnectPrinter=[],sysCommand=["cmd"])
+		return dict(turnOn=["ip","idx"],turnOff=["ip","idx"],checkStatus=["ip","idx"],connectPrinter=[],disconnectPrinter=[],sysCommand=["cmd"],getEnergyData=[])
 
 	def on_api_command(self, command, data):
 		self._tasmota_logger.debug(data)
@@ -260,6 +260,20 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		elif command == 'sysCommand':
 			self._tasmota_logger.debug("Running system command %s." % "{cmd}".format(**data))
 			os.system("{cmd}".format(**data))
+		elif command == 'getEnergyData':
+			energy_db = sqlite3.connect(self.energy_db_path)
+			energy_cursor = energy_db.cursor()
+			energy_cursor.execute('''SELECT ip, group_concat(timestamp) as timestamp, group_concat(current) as current, group_concat(power) as power, group_concat(total) as total FROM energy_data GROUP BY ip''')
+			response = {'energy_data' : energy_cursor.fetchall()}
+			energy_db.close()
+			import flask
+			return flask.jsonify(response)
+
+			# sensor_db = sqlite3.connect(self.sensor_db_path)
+			# sensor_cursor = sensor_db.cursor()
+			# sensor_cursor.execute('''SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT ?,?''', (data["record_offset"],data["record_limit"]))
+			# response = {'sensor_data' : sensor_cursor.fetchall()}
+			# sensor_db.close()
 
 	##~~ Gcode processing hook
 
