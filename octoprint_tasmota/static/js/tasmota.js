@@ -31,6 +31,9 @@ $(function() {
 							}
 						};
 
+		self.graph_start_date = ko.observable(moment().format('YYYY-MM-DDTHH:mm'));
+		self.graph_end_date = ko.observable(moment().subtract(1, 'days').format('YYYY-MM-DDTHH:mm'));
+
 		self.onBeforeBinding = function() {
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
 		}
@@ -52,89 +55,75 @@ $(function() {
 			}
 		}
 
+		self.plotEnergyData = function(){
+			$.ajax({
+			url: API_BASEURL + "plugin/tasmota",
+			type: "POST",
+			dataType: "json",
+			data: JSON.stringify({
+				command: "getEnergyData",
+				start_date: self.graph_start_date(),
+				end_date: self.graph_end_date()
+			}),
+			contentType: "application/json; charset=UTF-8"
+			}).done(function(data){
+					//update plotly graph here.
+					var energy_labels = [0,0,'Current','Power','Total'];
+					var sensor_labels = [0,0,'Temperature','Humidity'];
+					var traces = [];
+					for(var i=0;i<data.energy_data.length;i++){
+						for(var j=2;j<data.energy_data[i].length;j++){
+							var trace = {mode: 'lines'};
+							trace['name'] = data.energy_data[i][0] + ' ' + energy_labels[j];
+							trace['x'] = data.energy_data[i][1].split(',');
+							trace['y'] = data.energy_data[i][j].split(',');
+							traces.push(trace);
+						}
+					}
+					for(var i=0;i<data.sensor_data.length;i++){
+						for(var j=2;j<data.sensor_data[i].length;j++){
+							var trace = {mode: 'lines'};
+							trace['name'] = data.sensor_data[i][0] + ' ' + sensor_labels[j];
+							trace['x'] = data.sensor_data[i][1].split(',');
+							trace['y'] = data.sensor_data[i][j].split(',');
+							traces.push(trace);
+						}
+					}
+
+					var layout = {
+						autosize: true,
+						showlegend: false,
+						/* legend: {"orientation": "h"}, */
+						xaxis: { type:"date", /* tickformat:"%H:%M:%S", */ automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true},
+						yaxis: { type:"linear", automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true },
+						margin: {l:35,r:30,b:0,t:20,pad:5}
+					}
+
+					var options = {
+						showLink: false,
+						sendData: false,
+						displaylogo: false,
+						displayModeBar: false,
+						editable: false,
+						showTips: false
+					}
+
+					Plotly.react('tasmota_graph', traces, layout, options);
+				});
+		}
+
+		self.legend_visible = ko.observable(false);
+		
+		self.toggle_legend = function(){
+			self.legend_visible(self.legend_visible() ? false : true);
+			Plotly.relayout('tasmota_graph',{showlegend: self.legend_visible()});
+		}
+
 		self.onTabChange = function(current, previous) {
 			if (current === "#tab_plugin_tasmota") {
-				$.ajax({
-				url: API_BASEURL + "plugin/tasmota",
-				type: "POST",
-				dataType: "json",
-				data: JSON.stringify({
-					command: "getEnergyData"
-				}),
-				contentType: "application/json; charset=UTF-8"
-				}).done(function(data){
-						//update plotly graph here.
-/* 						var energy_trace_total = data['energy_data'].map(function(item){return item;});
-						var energy_trace_current = data['energy_data'].map(function(item){return item;});
-						var energy_trace_power = data['energy_data'].map(function(item){return item;});
-						var layout_energy = {title:'Tasmota Energy Data',
-									grid: {rows: 2, columns: 1, pattern: 'independent'},
-									xaxis: {
-										showticklabels: false,
-										anchor: 'x'
-									},
-									yaxis: {
-										title: 'Total (kWh)',
-										hoverformat: '.3f kWh',
-										tickangle: 45,
-										tickfont: {
-											size: 10
-										},
-										tickformat: '.2f',
-										anchor: 'y'
-									},
-									xaxis2: {
-										anchor: 'y2'
-									},
-									yaxis2: {
-										title: 'Current (Amp)',
-										hoverformat: '.3f',
-										anchor: 'x2',
-										tickangle: 45,
-										tickfont: {
-											size: 10
-										},
-										tickformat: '.2f'
-									},
-									xaxis3: {
-										overlaying: 'x2',
-										anchor: 'y3',
-										showticklabels: false
-									},
-									yaxis3: {
-										overlaying: 'y2',
-										side: 'right',
-										title: 'Power (W)',
-										hoverformat: '.3f',
-										anchor: 'x3',
-										tickangle: -45,
-										tickfont: {
-											size: 10
-										},
-										tickformat: '.2f'
-									}
-								};
-
-						var energy_plot_data = [energy_trace_total,energy_trace_current,energy_trace_power]
-						var sensor_plot_data = []
-						Plotly.react('tasmota_energy_graph',energy_plot_data,layout_energy);
-						Plotly.react('tasmota_sensor_graph',sensor_plot_data,layout_energy); */
-						var remapped_energy_data = data.energy_data.map(function(item, idx, arr){
-															var new_item = {};
-															new_item['name'] = item[0];
-															new_item['x'] = item[1].split(',').slice(-100);
-															new_item['y'] = item[2].split(',').slice(-100);
-															new_item['y2'] = item[3].split(',').slice(-100);
-															new_item['y3'] = item[4].split(',').slice(-100); 
-															new_item['mode'] = 'lines';
-															return new_item;
-														});
-						Plotly.react('tasmota_energy_graph', remapped_energy_data);
-						console.log(remapped_energy_data);
-						
-					});
-				}
-			};
+				self.plotEnergyData();
+			}
+		}
 
 		self.addPlug = function() {
 			self.selectedPlug({'ip':ko.observable(''),
@@ -395,6 +384,6 @@ $(function() {
 	OCTOPRINT_VIEWMODELS.push([
 		tasmotaViewModel,
 		["settingsViewModel","loginStateViewModel"],
-		["#navbar_plugin_tasmota","#settings_plugin_tasmota"]
+		["#navbar_plugin_tasmota","#settings_plugin_tasmota","#tab_plugin_tasmota"]
 	]);
 });

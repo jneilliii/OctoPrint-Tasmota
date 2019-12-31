@@ -1,2 +1,26 @@
-<div class="row-fluid" id="tasmota_energy_graph" data-bind="visible: loginState.isUser()"></div>
-<div class="row-fluid" id="tasmota_sensor_graph" data-bind="visible: loginState.isUser()"></div>
+<div class="row-fluid" id="tasmota_graph" data-bind="visible: loginState.isUser()"></div>
+<div class="row-fluid" data-bind="visible: loginState.isUser()">
+	<div class="btn-group pull-right">
+		<button class="btn btn-mini" title="Toggle Legend" data-bind="click: toggle_legend"><i class="fa fa-list"></i></button>
+	</div>
+</div>
+<div class="row-fluid" data-bind="visible: loginState.isUser()">
+	<div class="span5">
+		<label class="control-label">{{ _('Start') }}</label>
+		<div class="controls" style="position: relative">
+			<input type="datetime-local" class="input-block-level" data-bind="textInput: graph_start_date"/>
+		</div>
+	</div>
+	<div class="span5">
+		<label class="control-label">{{ _('End') }}</label>
+		<div class="controls" style="position: relative">
+			<input type="datetime-local" class="input-block-level" data-bind="textInput: graph_end_date"/>
+		</div>
+	</div>
+	<div class="span2">
+		<div class="controls">
+			<label class="control-label">&nbsp;</label>
+			<button class="btn btn-primary" data-bind="click: plotEnergyData">Update</button>
+		</div>
+	</div>
+</div>

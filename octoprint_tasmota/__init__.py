@@ -11,7 +11,7 @@ import re
 import requests
 import threading
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							octoprint.plugin.AssetPlugin,
@@ -94,7 +94,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_assets(self):
 		return dict(
-			js=["js/tasmota.js","js/knockout-bootstrap.min.js"],
+			js=["js/knockout-bootstrap.min.js","js/knockout-date.js","js/tasmota.js"],
 			css=["css/tasmota.css"]
 		)
 
@@ -103,7 +103,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def get_template_configs(self):
 		return [
 			dict(type="navbar", custom_bindings=True),
-			dict(type="settings", custom_bindings=True)
+			dict(type="settings", custom_bindings=True),
+			dict(type="tab", custom_bindings=True)
 		]
 
 	##~~ SimpleApiPlugin mixin
@@ -261,19 +262,30 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug("Running system command %s." % "{cmd}".format(**data))
 			os.system("{cmd}".format(**data))
 		elif command == 'getEnergyData':
+			self._logger.info(data);
+			response = {}
+			if "start_date" in data and data["start_date"] != "":
+				start_date = data["start_date"]
+			else:
+				start_date = datetime.date.today() - timedelta(days=1)
+			if "end_date" in data and data["end_date"] != "":
+				end_date = data["end_date"]
+			else:
+				end_date = datetime.date.today() + timedelta(days=1)
 			energy_db = sqlite3.connect(self.energy_db_path)
 			energy_cursor = energy_db.cursor()
-			energy_cursor.execute('''SELECT ip, group_concat(timestamp) as timestamp, group_concat(current) as current, group_concat(power) as power, group_concat(total) as total FROM energy_data GROUP BY ip''')
-			response = {'energy_data' : energy_cursor.fetchall()}
+			energy_cursor.execute('''SELECT ip || ':' || idx AS ip, group_concat(timestamp) as timestamp, group_concat(current) as current, group_concat(power) as power, group_concat(total) as total FROM energy_data WHERE timestamp BETWEEN ? AND ? GROUP BY ip, idx''', [start_date, end_date])
+			response["energy_data"] = energy_cursor.fetchall()
 			energy_db.close()
+
+			sensor_db = sqlite3.connect(self.sensor_db_path)
+			sensor_cursor = sensor_db.cursor()
+			sensor_cursor.execute('''SELECT ip || ':' || idx AS ip, group_concat(timestamp) as timestamp, group_concat(temperature) as temperature, group_concat(humidity) as humidity FROM sensor_data WHERE timestamp BETWEEN ? AND ? GROUP BY ip, idx''', [start_date, end_date])
+			response["sensor_data"] = sensor_cursor.fetchall()
+			sensor_db.close()
+
 			import flask
 			return flask.jsonify(response)
-
-			# sensor_db = sqlite3.connect(self.sensor_db_path)
-			# sensor_cursor = sensor_db.cursor()
-			# sensor_cursor.execute('''SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT ?,?''', (data["record_offset"],data["record_limit"]))
-			# response = {'sensor_data' : sensor_cursor.fetchall()}
-			# sensor_db.close()
 
 	##~~ Gcode processing hook
 
