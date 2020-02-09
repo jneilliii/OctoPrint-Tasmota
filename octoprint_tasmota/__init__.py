@@ -94,7 +94,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_assets(self):
 		return dict(
-			js=["js/knockout-bootstrap.min.js","js/knockout-date.js","js/tasmota.js"],
+			js=["js/plotly-latest.min.js","js/knockout-bootstrap.min.js","js/knockout-date.js","js/tasmota.js"],
 			css=["css/tasmota.css"]
 		)
 
@@ -235,17 +235,25 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return make_response("Insufficient rights", 403)
 
 		if command == 'turnOn':
+			if "backlog_delay" in data:
+				backlog_delay = data["backlog_delay"]
+			else:
+				backlog_delay = 0
 			if "username" in data and data["username"] != "":
 				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
-				self.turn_on("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data),backlog_delay="{backlog_delay}".format(**data))
+				self.turn_on("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data),backlog_delay=backlog_delay)
 			else:
-				self.turn_on("{ip}".format(**data),"{idx}".format(**data))
+				self.turn_on("{ip}".format(**data),"{idx}".format(**data),backlog_delay=backlog_delay)
 		elif command == 'turnOff':
+			if "backlog_delay" in data:
+				backlog_delay = data["backlog_delay"]
+			else:
+				backlog_delay = 0
 			if "username" in data and data["username"] != "":
 				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
-				self.turn_off("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data),backlog_delay="{backlog_delay}".format(**data))
+				self.turn_off("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data),backlog_delay=backlog_delay)
 			else:
-				self.turn_off("{ip}".format(**data),"{idx}".format(**data))
+				self.turn_off("{ip}".format(**data),"{idx}".format(**data),backlog_delay=backlog_delay)
 		elif command == 'checkStatus':
 			if "username" in data and data["username"] != "":
 				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
