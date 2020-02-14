@@ -178,7 +178,6 @@ $(function() {
 			if (plugin != "tasmota") {
 				return;
 			}
-			console.log('msg received:'+JSON.stringify(data));
 
 			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				return ((item.ip().toUpperCase() == data.ip.toUpperCase()) && (item.idx() == data.idx));
@@ -217,7 +216,7 @@ $(function() {
 							type: 'error',
 							hide: true
 							});
-				}				
+				}
 				self.settings.saveData();
 			}
 			self.processing.remove(data.ip);
@@ -238,15 +237,7 @@ $(function() {
 		}
 
 		self.turnOn = function(data) {
-			if(data.sysCmdOn()){
-				setTimeout(function(){self.sysCommand(data.sysRunCmdOn())},data.sysCmdOnDelay()*1000);
-			}
-			if(data.autoConnect()){
-				self.sendTurnOn(data);
-				setTimeout(function(){self.connectPrinter()},data.autoConnectDelay()*1000);
-			} else {
-				self.sendTurnOn(data);
-			}
+			self.sendTurnOn(data);
 		}
 
 		self.sendTurnOn = function(data) {
@@ -272,15 +263,7 @@ $(function() {
 				$("#TasmotaWarning").modal("show");
 			} else {
 				$("#TasmotaWarning").modal("hide");
-				if(data.sysCmdOff()){
-					setTimeout(function(){self.sysCommand(data.sysRunCmdOff())},data.sysCmdOffDelay()*1000);
-				}
-				if(data.autoDisconnect()){
-					self.disconnectPrinter();
-					setTimeout(function(){self.sendTurnOff(data);},data.autoDisconnectDelay()*1000);
-				} else {
-					self.sendTurnOff(data);
-				}
+				self.sendTurnOff(data);
 			}
 		}; 
 
@@ -319,43 +302,6 @@ $(function() {
 				});
 		}; 
 
-		self.disconnectPrinter = function() {
-			$.ajax({
-				url: API_BASEURL + "plugin/tasmota",
-				type: "POST",
-				dataType: "json",
-				data: JSON.stringify({
-					command: "disconnectPrinter"
-				}),
-				contentType: "application/json; charset=UTF-8"
-			});
-		}
-
-		self.connectPrinter = function() {
-			$.ajax({
-				url: API_BASEURL + "plugin/tasmota",
-				type: "POST",
-				dataType: "json",
-				data: JSON.stringify({
-					command: "connectPrinter"
-				}),
-				contentType: "application/json; charset=UTF-8"
-			});
-		}
-
-		self.sysCommand = function(sysCmd) {
-			$.ajax({
-				url: API_BASEURL + "plugin/tasmota",
-				type: "POST",
-				dataType: "json",
-				data: JSON.stringify({
-					command: "sysCommand",
-					cmd: sysCmd
-				}),
-				contentType: "application/json; charset=UTF-8"
-			});
-		}
-
 		self.checkStatuses = function() {
 			ko.utils.arrayForEach(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 				if(item.ip() !== "") {
@@ -365,7 +311,9 @@ $(function() {
 					self.checkStatus(item);
 				}
 			});
-			if (self.settings.settings.plugins.tasmota.polling_enabled() && parseInt(self.settings.settings.plugins.tasmota.polling_interval(),10) > 0) {
+
+			// Moved to server side python
+/* 			if (self.settings.settings.plugins.tasmota.polling_enabled() && parseInt(self.settings.settings.plugins.tasmota.polling_interval(),10) > 0) {
 				if(self.settings.settings.plugins.tasmota.debug_logging()){
 					console.log('Polling enabled, checking status again in ' + (parseInt(self.settings.settings.plugins.tasmota.polling_interval(),10) * 60000) + '.');
 				}
@@ -376,7 +324,7 @@ $(function() {
 					clearTimeout(self.polling_timer);
 				}
 				self.polling_timer = setTimeout(function() {self.checkStatuses();}, (parseInt(self.settings.settings.plugins.tasmota.polling_interval(),10) * 60000));
-			};
+			}; */
 		};
 	}
 

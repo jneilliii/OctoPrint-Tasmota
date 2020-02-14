@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import octoprint.plugin
 from octoprint.server import user_permission
+from octoprint.util import RepeatedTimer
 import socket
 import time
 import logging
@@ -23,6 +24,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger = logging.getLogger("octoprint.plugins.tasmota")
 		self._tasmota_logger = logging.getLogger("octoprint.plugins.tasmota.debug")
 		self.thermal_runaway_triggered = False
+		self.poll_status = None
 
 	##~~ StartupPlugin mixin
 
@@ -54,12 +56,14 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			db.close()
 	def on_after_startup(self):
 		self._logger.info("Tasmota loaded!")
+		if self._settings.get(["polling_enabled"]):
+			self.poll_status = RepeatedTimer(int(self._settings.get(["polling_interval"]))*60, self.check_statuses)
+			self.poll_status.start()
 
 	##~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
 		return dict(
-			singleRelay = True,
 			debug_logging = False,
 			polling_enabled = False,
 			polling_interval = 0,
@@ -71,15 +75,28 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_settings_save(self, data):
 		old_debug_logging = self._settings.get_boolean(["debug_logging"])
+		old_polling_value = self._settings.get_boolean(["polling_enabled"])
+		old_polling_timer = self._settings.get(["polling_interval"])
 
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 		new_debug_logging = self._settings.get_boolean(["debug_logging"])
+		new_polling_value = self._settings.get_boolean(["polling_enabled"])
+		new_polling_timer = self._settings.get(["polling_interval"])
+
 		if old_debug_logging != new_debug_logging:
 			if new_debug_logging:
 				self._tasmota_logger.setLevel(logging.DEBUG)
 			else:
 				self._tasmota_logger.setLevel(logging.INFO)
+
+		if old_polling_value != new_polling_value or old_polling_timer != new_polling_timer:
+			if self.poll_status:
+				self.poll_status.cancel()
+				
+			if new_polling_value:
+				self.poll_status = RepeatedTimer(int(self._settings.get(["polling_interval"]))*60, self.check_statuses)
+				self.poll_status.start()
 
 	def get_settings_version(self):
 		return 6
@@ -109,28 +126,32 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	##~~ SimpleApiPlugin mixin
 
-	def turn_on(self, plugip, plugidx, username="admin", password="", backlog_delay=0):
-		if self._settings.get(['singleRelay']):
-			plugidx = ''
+	def turn_on(self, plugip, plugidx):
 		self._tasmota_logger.debug("Turning on %s index %s." % (plugip, plugidx))
+		plug = self.plug_search(self._settings.get(["arrSmartplugs"]),"ip",plugip,"idx",plugidx)
 		try:
-			if int(backlog_delay) > 0:
-				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=backlog%20delay%20" + str(int(backlog_delay)*10) + "%3BPower" + str(plugidx) + "%20on%3B")
+			if plug["use_backlog"] and int(plug["backlog_on_delay"]) > 0:
+				webresponse = requests.get("http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=backlog%20delay%20" + str(int(plug["backlog_on_delay"])*10) + "%3BPower" + str(plug["idx"]) + "%20on%3B")
 				response = dict()
-				response["POWER%s" % plugidx] = "ON"
+				response["POWER%s" % plug["idx"]] = "ON"
 			else:
-				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Power" + str(plugidx) + "%20on")
+				webresponse = requests.get("http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=Power" + str(plug["idx"]) + "%20on")
 				response = webresponse.json()
-			chk = response["POWER%s" % plugidx]
+			chk = response["POWER%s" % plug["idx"]]
 		except:
-			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
+			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plug["ip"], exc_info=True)
 			response = "Unknown error turning on %s index %s." % (plugip, plugidx)
 			chk = "UNKNOWN"
 
 		self._tasmota_logger.debug("Response: %s" % response)
-		if self._settings.get(['singleRelay']):
-			plugidx = '1'
+
 		if chk.upper() == "ON":
+			if plug["autoConnect"] and self._printer.is_closed_or_error():
+				c = threading.Timer(int(plug["autoConnectDelay"]),self._printer.connect)
+				c.start()
+			if plug["sysCmdOn"]:
+				t = threading.Timer(int(plug["sysCmdOnDelay"]),os.system,args=[plug["sysRunCmdOn"]])
+				t.start()
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
 		elif chk.upper() == "OFF":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
@@ -138,27 +159,32 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug(response)
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 
-	def turn_off(self, plugip, plugidx, username="admin", password="", backlog_delay=0):
-		if self._settings.get(['singleRelay']):
-			plugidx = ''
+	def turn_off(self, plugip, plugidx):
 		self._tasmota_logger.debug("Turning off %s index %s." % (plugip, plugidx))
+		plug = self.plug_search(self._settings.get(["arrSmartplugs"]),"ip",plugip,"idx",plugidx)
 		try:
-			if int(backlog_delay) > 0:
-				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=backlog%20delay%20" + str(int(backlog_delay)*10) + "%3BPower" + str(plugidx) + "%20off%3B")
+			if plug["use_backlog"] and int(plug["backlog_off_delay"]) > 0:
+				webresponse = requests.get("http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=backlog%20delay%20" + str(int(plug["backlog_off_delay"])*10) + "%3BPower" + str(plug["idx"]) + "%20off%3B")
 				response = dict()
-				response["POWER%s" % plugidx] = "OFF"
-			else:
-				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Power" + str(plugidx) + "%20off")
+				response["POWER%s" % plug["idx"]] = "OFF"
+
+			if plug["sysCmdOff"]:
+				t = threading.Timer(int(plug["sysCmdOffDelay"]),os.system,args=[plug["sysRunCmdOff"]])
+				t.start()
+			if plug["autoDisconnect"]:
+				self._printer.disconnect()
+				time.sleep(int(plug["autoDisconnectDelay"]))
+
+			if not plug["use_backlog"]:
+				webresponse = requests.get("http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=Power" + str(plug["idx"]) + "%20off")
 				response = webresponse.json()
-			chk = response["POWER%s" % plugidx]
+			chk = response["POWER%s" % plug["idx"]]
 		except:
-			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plugip, exc_info=True)
+			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plug["ip"], exc_info=True)
 			response = "Unknown error turning off %s index %s." % (plugip, plugidx)
 			chk = "UNKNOWN"
 
 		self._tasmota_logger.debug("Response: %s" % response)
-		if self._settings.get(['singleRelay']):
-			plugidx = '1'
 		if chk.upper() == "ON":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
 		elif chk.upper() == "OFF":
@@ -167,15 +193,17 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug(response)
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 
-	def check_status(self, plugip, plugidx, username="admin", password=""):
-		if self._settings.get(['singleRelay']):
-			plugidx = ''
+	def check_statuses(self):
+		for plug in self._settings.get(["arrSmartplugs"]):
+			self.check_status(plug["ip"], plug["idx"])
+
+	def check_status(self, plugip, plugidx):
 		self._tasmota_logger.debug("Checking status of %s index %s." % (plugip, plugidx))
 		if plugip != "":
 			try:
 				plug = self.plug_search(self._settings.get(["arrSmartplugs"]),"ip",plugip,"idx",plugidx)
 				self._tasmota_logger.debug(plug)
-				webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=Status%200")
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=Status%200")
 				response = webresponse.json()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, response))
 				#chk = response["POWER%s" % plugidx]
@@ -215,8 +243,6 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				chk = "UNKNOWN"
 
 			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, chk))
-			if self._settings.get(['singleRelay']):
-				plugidx = '1'
 			if chk.upper() == "ON":
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx,energy_data=energy_data,sensor_data=sensor_data))
 			elif chk.upper() == "OFF":
@@ -226,7 +252,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 
 	def get_api_commands(self):
-		return dict(turnOn=["ip","idx"],turnOff=["ip","idx"],checkStatus=["ip","idx"],connectPrinter=[],disconnectPrinter=[],sysCommand=["cmd"],getEnergyData=[])
+		return dict(turnOn=["ip","idx"],turnOff=["ip","idx"],checkStatus=["ip","idx"],getEnergyData=[])
 
 	def on_api_command(self, command, data):
 		self._tasmota_logger.debug(data)
@@ -235,40 +261,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return make_response("Insufficient rights", 403)
 
 		if command == 'turnOn':
-			if "backlog_delay" in data:
-				backlog_delay = data["backlog_delay"]
-			else:
-				backlog_delay = 0
-			if "username" in data and data["username"] != "":
-				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
-				self.turn_on("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data),backlog_delay=backlog_delay)
-			else:
-				self.turn_on("{ip}".format(**data),"{idx}".format(**data),backlog_delay=backlog_delay)
+			self.turn_on("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'turnOff':
-			if "backlog_delay" in data:
-				backlog_delay = data["backlog_delay"]
-			else:
-				backlog_delay = 0
-			if "username" in data and data["username"] != "":
-				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
-				self.turn_off("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data),backlog_delay=backlog_delay)
-			else:
-				self.turn_off("{ip}".format(**data),"{idx}".format(**data),backlog_delay=backlog_delay)
+			self.turn_off("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'checkStatus':
-			if "username" in data and data["username"] != "":
-				self._tasmota_logger.debug("Using authentication for %s." % "{ip}".format(**data))
-				self.check_status("{ip}".format(**data),"{idx}".format(**data),username="{username}".format(**data),password="{password}".format(**data))
-			else:
-				self.check_status("{ip}".format(**data),"{idx}".format(**data))
-		elif command == 'connectPrinter':
-			self._tasmota_logger.debug("Connecting printer.")
-			self._printer.connect()
-		elif command == 'disconnectPrinter':
-			self._tasmota_logger.debug("Disconnecting printer.")
-			self._printer.disconnect()
-		elif command == 'sysCommand':
-			self._tasmota_logger.debug("Running system command %s." % "{cmd}".format(**data))
-			os.system("{cmd}".format(**data))
+			self.check_status("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'getEnergyData':
 			self._logger.info(data);
 			response = {}
