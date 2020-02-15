@@ -160,22 +160,29 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 
 	def turn_off(self, plugip, plugidx):
-		self._tasmota_logger.debug("Turning off %s index %s." % (plugip, plugidx))
 		plug = self.plug_search(self._settings.get(["arrSmartplugs"]),"ip",plugip,"idx",plugidx)
+		self._tasmota_logger.debug("Turning off %s " % plug)
 		try:
 			if plug["use_backlog"] and int(plug["backlog_off_delay"]) > 0:
-				webresponse = requests.get("http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=backlog%20delay%20" + str(int(plug["backlog_off_delay"])*10) + "%3BPower" + str(plug["idx"]) + "%20off%3B")
+				self._tasmota_logger.debug("Using backlog commands with a delay value of %s" % str(int(plug["backlog_off_delay"])*10))
+				backlog_url = "http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=backlog%20delay%20" + str(int(plug["backlog_off_delay"])*10) + "%3BPower" + str(plug["idx"]) + "%20off%3B"
+				self._tasmota_logger.debug("Sending command %s" % backlog_url)
+				webresponse = requests.get(backlog_url)
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "OFF"
 
 			if plug["sysCmdOff"]:
+				self._tasmota_logger.debug("Running system command: %s in %s" % (plug["sysRunCmdOff"],plug["sysCmdOffDelay"]))
 				t = threading.Timer(int(plug["sysCmdOffDelay"]),os.system,args=[plug["sysRunCmdOff"]])
 				t.start()
+
 			if plug["autoDisconnect"]:
+				self._tasmota_logger.debug("Disconnnecting from printer")
 				self._printer.disconnect()
 				time.sleep(int(plug["autoDisconnectDelay"]))
 
 			if not plug["use_backlog"]:
+				self._tasmota_logger.debug("Not using backlog commands")
 				webresponse = requests.get("http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=Power" + str(plug["idx"]) + "%20off")
 				response = webresponse.json()
 			chk = response["POWER%s" % plug["idx"]]
@@ -295,40 +302,34 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ Gcode processing hook
 
 	def gcode_off(self, plug):
+		self._tasmota_logger.debug("Sending gcode off")
 		if plug["warnPrinting"] and self._printer.is_printing():
 			self._tasmota_logger.info("Not powering off %s because printer is printing." % plug["label"])
 		else:
-			self.turn_off(plug["ip"], plug["idx"], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_off_delay"])
+			self._tasmota_logger.debug("Sending turn off for %s index %s" % (plug["ip"], plug["idx"]))
+			self.turn_off(plug["ip"], plug["idx"])
 
 	def gcode_on(self, plug):
-		self.turn_on(plug["ip"], plug["idx"], username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_on_delay"])
-
+		self.turn_on(plug["ip"], plug["idx"])
 
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-		if gcode:
-			if cmd.startswith("M8") and cmd.count(" ") >= 2:
-				plugip = cmd.split()[1]
-				plugidx = cmd.split()[2]
-				for plug in self._settings.get(["arrSmartplugs"]):
-					if plug["ip"].upper() == plugip.upper() and plug["idx"] == plugidx and plug["gcodeEnabled"]:
-						if cmd.startswith("M80"):
-							if plug["sysCmdOn"] and plug["sysRunCmdOn"] != "":
-								s = threading.Timer(int(plug["sysCmdOnDelay"]), os.system, [plug["sysRunCmdOn"]])
-								s.start()
-							t = threading.Timer(int(plug["gcodeOnDelay"]),self.gcode_on, [plug])
-							t.start()
-							self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
-							return
-						elif cmd.startswith("M81"):
-							if plug["sysCmdOff"] and plug["sysRunCmdOff"] != "":
-								s = threading.Timer(int(plug["sysCmdOffDelay"]), os.system, [plug["sysRunCmdOff"]])
-								s.start()
-							t = threading.Timer(int(plug["gcodeOffDelay"]),self.gcode_off, [plug])
-							t.start()
-							self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
-							return
-						else:
-							return
+		if gcode in ["M80","M81"] and cmd.count(" ") >= 2:
+			plugip = cmd.split()[1]
+			plugidx = cmd.split()[2]
+			for plug in self._settings.get(["arrSmartplugs"]):
+				if plug["ip"].upper() == plugip.upper() and plug["idx"] == plugidx and plug["gcodeEnabled"]:
+					if cmd.startswith("M80"):
+						self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
+						t = threading.Timer(int(plug["gcodeOnDelay"]),self.gcode_on, [plug])
+						t.start()
+						return
+					elif cmd.startswith("M81"):
+						self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
+						t = threading.Timer(int(plug["gcodeOffDelay"]),self.gcode_off, [plug])
+						t.start()
+						return
+					else:
+						return
 			return
 
 	##~~ Temperatures received hook
