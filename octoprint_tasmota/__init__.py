@@ -258,8 +258,20 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._tasmota_logger.debug(response)
 				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="unknown",ip=plugip,idx=plugidx))
 
+	def checkSetOption26(self, plugip, username, password):
+		webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=SetOption26")
+		response = webresponse.json()
+		self._tasmota_logger.debug(response)
+		return response
+
+	def setSetOption26(self, plugip, username, password):
+		webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(password) + "&cmnd=SetOption26%20ON")
+		response = webresponse.json()
+		self._tasmota_logger.debug(response)
+		return response
+
 	def get_api_commands(self):
-		return dict(turnOn=["ip","idx"],turnOff=["ip","idx"],checkStatus=["ip","idx"],getEnergyData=[])
+		return dict(turnOn=["ip","idx"],turnOff=["ip","idx"],checkStatus=["ip","idx"],getEnergyData=[],checkSetOption26=["ip","username","password"],setSetOption26=["ip","username","password"])
 
 	def on_api_command(self, command, data):
 		self._tasmota_logger.debug(data)
@@ -273,6 +285,14 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self.turn_off("{ip}".format(**data),"{idx}".format(**data))
 		elif command == 'checkStatus':
 			self.check_status("{ip}".format(**data),"{idx}".format(**data))
+		elif command == 'checkSetOption26':
+			response = self.checkSetOption26("{ip}".format(**data),"{username}".format(**data),"{password}".format(**data))
+			import flask
+			return flask.jsonify(response)
+		elif command == 'setSetOption26':
+			response = self.setSetOption26("{ip}".format(**data),"{username}".format(**data),"{password}".format(**data))
+			import flask
+			return flask.jsonify(response)
 		elif command == 'getEnergyData':
 			self._logger.info(data);
 			response = {}

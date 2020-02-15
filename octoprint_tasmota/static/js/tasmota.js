@@ -284,6 +284,47 @@ $(function() {
 			});
 		}
 
+		self.checkSetOption26 = function(data, evt) {
+			evt.currentTarget.blur();
+			$.ajax({
+				url: API_BASEURL + "plugin/tasmota",
+				type: "POST",
+				dataType: "json",
+				data: JSON.stringify({
+					command: "checkSetOption26",
+					ip: data.ip(),
+					username: data.username(),
+					password: data.password()
+				}),
+				contentType: "application/json; charset=UTF-8"
+			}).done(function(response){
+				if(response["SetOption26"] == "OFF"){
+					var test = confirm("SetOption26 needs to be updated to ON for proper operation. Would you like to set that option now?");
+					if (test) {
+						$.ajax({
+							url: API_BASEURL + "plugin/tasmota",
+							type: "POST",
+							dataType: "json",
+							data: JSON.stringify({
+								command: "setSetOption26",
+								ip: data.ip(),
+								username: data.username(),
+								password: data.password()
+							}),
+							contentType: "application/json; charset=UTF-8"
+						}).done(function(response){
+							if(response["SetOption26"] == "ON"){
+								alert("SetOption26 updated to ON for proper operation.");
+								self.checkStatuses();
+							}
+						});
+					}
+				} else {
+					alert("Tasmota device responded and is configured properly.");
+				}
+				});
+		}
+
 		self.checkStatus = function(data) {
 			$.ajax({
 				url: API_BASEURL + "plugin/tasmota",
@@ -292,9 +333,7 @@ $(function() {
 				data: JSON.stringify({
 					command: "checkStatus",
 					ip: data.ip(),
-					idx: data.idx(),
-					username: data.username(),
-					password: data.password()
+					idx: data.idx()
 				}),
 				contentType: "application/json; charset=UTF-8"
 			}).done(function(){
