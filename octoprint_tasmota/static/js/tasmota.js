@@ -30,9 +30,102 @@ $(function() {
 									return data.unknown_color();
 							}
 						};
+		self.refreshVisible = ko.observable(true);
+		self.automaticShutdownEnabled = ko.observable(false);
+		self.filteredSmartplugs = ko.computed(function(){
+			return ko.utils.arrayFilter(self.arrSmartplugs(), function(item) {
+						return item.automaticShutdownEnabled() == true;
+					});
+		});
 
-		self.graph_start_date = ko.observable(moment().format('YYYY-MM-DDTHH:mm'));
-		self.graph_end_date = ko.observable(moment().subtract(1, 'days').format('YYYY-MM-DDTHH:mm'));
+		self.show_sidebar = ko.computed(function(){
+			return self.filteredSmartplugs().length > 0;
+		});
+
+		self.toggleShutdownTitle = ko.pureComputed(function() {
+			return self.automaticShutdownEnabled() ? 'Disable Automatic Power Off' : 'Enable Automatic Power Off';
+		})
+
+		// Hack to remove automatically added Cancel button
+		// See https://github.com/sciactive/pnotify/issues/141
+		PNotify.prototype.options.confirm.buttons = [];
+		self.timeoutPopupText = gettext('Powering off in ');
+		self.timeoutPopupOptions = {
+			title: gettext('Automatic Power Off'),
+			type: 'notice',
+			icon: true,
+			hide: false,
+			confirm: {
+				confirm: true,
+				buttons: [{
+					text: 'Cancel Power Off',
+					addClass: 'btn-block btn-danger',
+					promptTrigger: true,
+					click: function(notice, value){
+						notice.remove();
+						notice.get().trigger("pnotify.cancel", [notice, value]);
+					}
+				}]
+			},
+			buttons: {
+				closer: false,
+				sticker: false,
+			},
+			history: {
+				history: false
+			}
+		};
+
+		self.onAutomaticShutdownEvent = function() {
+			if (self.automaticShutdownEnabled()) {
+				$.ajax({
+					url: API_BASEURL + "plugin/tasmota",
+					type: "POST",
+					dataType: "json",
+					data: JSON.stringify({
+						command: "enableAutomaticShutdown"
+					}),
+					contentType: "application/json; charset=UTF-8"
+				})
+			} else {
+				$.ajax({
+					url: API_BASEURL + "plugin/tasmota",
+					type: "POST",
+					dataType: "json",
+					data: JSON.stringify({
+						command: "disableAutomaticShutdown"
+					}),
+					contentType: "application/json; charset=UTF-8"
+				})
+			}
+		}
+
+		self.automaticShutdownEnabled.subscribe(self.onAutomaticShutdownEvent, self);
+
+		self.onToggleAutomaticShutdown = function(data) {
+			if (self.automaticShutdownEnabled()) {
+				self.automaticShutdownEnabled(false);
+			} else {
+				self.automaticShutdownEnabled(true);
+			}
+		}
+
+		self.abortShutdown = function(abortShutdownValue) {
+			self.timeoutPopup.remove();
+			self.timeoutPopup = undefined;
+			$.ajax({
+				url: API_BASEURL + "plugin/tasmota",
+				type: "POST",
+				dataType: "json",
+				data: JSON.stringify({
+					command: "abortAutomaticShutdown"
+				}),
+				contentType: "application/json; charset=UTF-8"
+			})
+		}
+
+		self.graph_start_date = ko.observable(moment().subtract(1, 'days').format('YYYY-MM-DDTHH:mm'));
+		self.graph_end_date = ko.observable(moment().format('YYYY-MM-DDTHH:mm'));
 
 		self.onBeforeBinding = function() {
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
@@ -66,7 +159,8 @@ $(function() {
 				end_date: self.graph_end_date()
 			}),
 			contentType: "application/json; charset=UTF-8"
-			}).done(function(data){
+			}).done(function(data){					
+					console.log(data);
 					//update plotly graph here.
 					var energy_labels = [0,0,'Current','Power','Total'];
 					var sensor_labels = [0,0,'Temperature','Humidity'];
@@ -156,7 +250,8 @@ $(function() {
 							   'use_backlog':ko.observable(false),
 							   'backlog_on_delay':ko.observable(0),
 							   'backlog_off_delay':ko.observable(0),
-							   'thermal_runaway':ko.observable(false)});
+							   'thermal_runaway':ko.observable(false),
+							  'automaticShutdownEnabled':ko.observable(false)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}
@@ -179,47 +274,70 @@ $(function() {
 				return;
 			}
 
-			plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
-				return ((item.ip().toUpperCase() == data.ip.toUpperCase()) && (item.idx() == data.idx));
-				}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','gcodeEnabled':false};
-			
-			if(self.settings.settings.plugins.tasmota.debug_logging()){
-				console.log(self.settings.settings.plugins.tasmota.arrSmartplugs());
-				console.log('msg received:'+JSON.stringify(data));
-				console.log('plug data:'+ko.toJSON(plug));
-			}
+			if(data.hasOwnProperty("automaticShutdownEnabled")) {
+				self.automaticShutdownEnabled(data.automaticShutdownEnabled);
 
-			var tooltip = plug.label();
-			if(data.sensor_data) {
-				for(k in data.sensor_data) {
-					tooltip += '<br>' + k + ': ' + data.sensor_data[k]
+				if (data.type == "timeout") {
+					if ((data.timeout_value != null) && (data.timeout_value > 0)) {
+						self.timeoutPopupOptions.text = self.timeoutPopupText + data.timeout_value;
+						if (typeof self.timeoutPopup != "undefined") {
+							self.timeoutPopup.update(self.timeoutPopupOptions);
+						} else {
+							self.timeoutPopup = new PNotify(self.timeoutPopupOptions);
+							self.timeoutPopup.get().on('pnotify.cancel', function() {self.abortShutdown(true);});
+						}
+					} else {
+						if (typeof self.timeoutPopup != "undefined") {
+							self.timeoutPopup.remove();
+							self.timeoutPopup = undefined;
+						}
+					}
 				}
-			}
-			if(data.energy_data) {
-				for(k in data.energy_data) {
-					tooltip += '<br>' + k + ': ' + data.energy_data[k]
+				return;
+			} else {
+				console.log(data);
+				plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
+					return ((item.ip().toUpperCase() == data.ip.toUpperCase()) && (item.idx() == data.idx));
+					}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','gcodeEnabled':false};
+				
+				if(self.settings.settings.plugins.tasmota.debug_logging()){
+					console.log(self.settings.settings.plugins.tasmota.arrSmartplugs());
+					console.log('msg received:'+JSON.stringify(data));
+					console.log('plug data:'+ko.toJSON(plug));
 				}
-			}
-			plug.label_extended = ko.observable(tooltip);
 
-			if (plug.currentState != data.currentState) {
-				plug.currentState(data.currentState)
-				switch(data.currentState) {
-					case "on":
-						break;
-					case "off":
-						break;
-					default:
-						new PNotify({
-							title: 'Tasmota Error',
-							text: 'Status ' + plug.currentState() + ' for ' + plug.ip() + '. Double check IP Address\\Hostname in Tasmota Settings.',
-							type: 'error',
-							hide: true
-							});
+				var tooltip = plug.label();
+				if(data.sensor_data) {
+					for(k in data.sensor_data) {
+						tooltip += '<br>' + k + ': ' + data.sensor_data[k]
+					}
 				}
-				self.settings.saveData();
+				if(data.energy_data) {
+					for(k in data.energy_data) {
+						tooltip += '<br>' + k + ': ' + data.energy_data[k]
+					}
+				}
+				plug.label_extended = ko.observable(tooltip);
+
+				if (plug.currentState != data.currentState) {
+					plug.currentState(data.currentState)
+					switch(data.currentState) {
+						case "on":
+							break;
+						case "off":
+							break;
+						default:
+							new PNotify({
+								title: 'Tasmota Error',
+								text: 'Status ' + plug.currentState() + ' for ' + plug.ip() + '. Double check IP Address\\Hostname in Tasmota Settings.',
+								type: 'error',
+								hide: true
+								});
+					}
+					self.settings.saveData();
+				}
+				self.processing.remove(data.ip);
 			}
-			self.processing.remove(data.ip);
 		};
 
 		self.toggleRelay = function(data) {
@@ -371,6 +489,6 @@ $(function() {
 	OCTOPRINT_VIEWMODELS.push([
 		tasmotaViewModel,
 		["settingsViewModel","loginStateViewModel"],
-		["#navbar_plugin_tasmota","#settings_plugin_tasmota","#tab_plugin_tasmota"]
+		["#navbar_plugin_tasmota","#settings_plugin_tasmota","#tab_plugin_tasmota","#sidebar_plugin_tasmota_wrapper"]
 	]);
 });
