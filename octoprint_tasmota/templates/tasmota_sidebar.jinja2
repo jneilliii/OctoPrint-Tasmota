@@ -1,0 +1,7 @@
+<!-- ko if: show_sidebar -->
+<div id="tasmotasmartplugs" class="row-fluid" data-bind="foreach: filteredSmartplugs" style="display: none;">
+	<div class="row-fluid" data-bind="css: currentState">
+		Plug: <strong data-bind="text: label"></strong><br/>
+	</div>
+</div>
+<!-- /ko -->

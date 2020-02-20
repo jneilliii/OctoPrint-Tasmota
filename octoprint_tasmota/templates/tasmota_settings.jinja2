@@ -4,15 +4,16 @@
 		<tr>
 			<td>{{ _('Plug') }}</td>
 			<td style="text-align:center">{{ _('Options') }}</td>
-			<td style="text-align:center"><a href="#" class="btn btn-mini icon-plus" data-bind="click: addPlug"></a></td>
+			<td style="text-align:center"><div class="btn-group"><button class="btn btn-mini" data-bind="click: addPlug"><i class="icon icon-plus" aria-hidden="true"></i></button></div></td>
 		</tr>
 	</thead>
-	<tbody data-bind='foreach: settings.settings.plugins.tasmota.arrSmartplugs'>
+	<tbody data-bind="sortable: { data: settings.settings.plugins.tasmota.arrSmartplugs, options: { cancel: '.unsortable', handle: '.move_plug', axis: 'y'} }">
 		<tr data-bind="attr: {title: ip}">
 			<td>
 				<span data-bind="text: label" />
 			</td>
 			<td style="text-align:center">
+				<i class="icon" data-bind="css: {'icon-check': automaticShutdownEnabled(),'icon-check-empty': !automaticShutdownEnabled()}" title="Automatic Power Off" />
 				<i class="icon" data-bind="css: {'icon-check': displayWarning(),'icon-check-empty': !displayWarning()}" title="Warning Prompt" />
 				<i class="icon" data-bind="css: {'icon-check': warnPrinting(),'icon-check-empty': !warnPrinting()}" title="Warn While Printing" />
 				<i class="icon" data-bind="css: {'icon-check': thermal_runaway(),'icon-check-empty': !thermal_runaway()}" title="Thermal Runaway" />
@@ -24,8 +25,9 @@
 			</td>
 			<td style="text-align:center">
 				<div class="btn-group">
-					<a href="#" class="btn btn-mini icon-pencil" data-bind="click: $root.editPlug"></a>
-					<a href="#" class="btn btn-mini icon-trash" data-bind="click: $root.removePlug, visible: $root.settings.settings.plugins.tasmota.arrSmartplugs().length > 1"></a>
+					<button class="btn btn-mini move_plug"><i class="icon icon-move" aria-hidden="true"></i></button>
+					<button class="btn btn-mini" data-bind="click: $root.editPlug"><i class="icon icon-pencil" aria-hidden="true"></i></button>
+					<button class="btn btn-mini btn-danger" data-bind="click: $root.removePlug"><i class="icon icon-trash" aria-hidden="true"></i></button>
 				</div>
 			</td>
 		</tr>
@@ -49,18 +51,26 @@
 		<input type="number" min="0" class="input input-small" data-bind="value: settings.settings.plugins.tasmota.thermal_runaway_max_extruder" />
 	</div>
 </div>
-
 <div class="control-group">
 	<div class="controls">
 		<label class="checkbox">
-		<input type="checkbox" data-bind="checked: settings.settings.plugins.tasmota.debug_logging"> Enable debug logging.
+		<input type="checkbox" data-bind="checked: settings.settings.plugins.tasmota.automatic_power_off"> Enable Automatic Power Off of Enabled Relays.
 		</label>
+	</div>
+</div>
+<div class="control-group" data-bind="visible: settings.settings.plugins.tasmota.automatic_power_off">
+	<label class="control-label">Cancel Automatic Power Off Timer</label>
+	<div class="controls">
+		<div class="input-append">
+			<input type="number" class="input-mini text-right" data-bind="value: settings.settings.plugins.tasmota.abortTimeout">
+			<span class="add-on">sec</span>
+		</div>
 	</div>
 </div>
 <div class="control-group">
 	<div class="controls">
 		<label class="checkbox">
-		<input type="checkbox" data-bind="checked: settings.settings.plugins.tasmota.singleRelay"> Single Relay Device.
+		<input type="checkbox" data-bind="checked: settings.settings.plugins.tasmota.debug_logging"> Enable debug logging.
 		</label>
 	</div>
 </div>
@@ -78,7 +88,7 @@
 	</div>
 </div>
 
-<div id="TasmotaEditor" data-bind="with: selectedPlug" class="modal hide fade">
+<div id="TasmotaEditor" data-bind="with: selectedPlug" class="modal large hide fade">
 	<div class="modal-header">
 		<a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
 		<h3>Tasmota Editor</h3>
@@ -86,56 +96,126 @@
 	<div class="modal-body">
 		<table class="table table-condensed">
 			<tr>
-				<td><div class="controls"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip" /><div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Index') }}</label><input type="text" class="input-block-level" data-bind="value: idx" /><div></td>
+				<td><div class="control-group" data-bind="css: {error: ip().match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/) == null}"><div class="controls"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /><div></div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Index') }}</label><input type="number" min="1" class="input-block-level" data-bind="value: idx" /><div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Label') }}</label><input type="text" class="input input-small" data-bind="value: label" /></div></td>
-			</tr>
-			<tr>
-				<td><div class="controls"><label class="control-label"><a href="https://fontawesome.com/v3.2.1/icons/" target="_blank">{{ _('Icon Class') }}</a></label><input type="text" class="input-block-level" data-bind="value: icon" /><div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Username') }}</label><input type="text" class="input-block-level" data-bind="value: username" /><div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Password') }}</label><input type="text" class="input input-small" data-bind="value: password" /></div></td>
+				<td style="text-align: center;vertical-align: middle;"><button class="btn" data-bind="click: $root.checkSetOption26, enable: ip().match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/)">Verify</button></td>
 			</tr>
 			<tr>
-				<td><div class="controls"><label class="control-label">{{ _('On Color') }}</label><input type="text" class="input-block-level" data-bind="value: on_color" /><div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Off Color') }}</label><input type="text" class="input-block-level" data-bind="value: off_color" /><div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Unknown Color') }}</label><input type="text" class="input input-small" data-bind="value: unknown_color" /></div></td>
-			</tr>
-			<tr>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: use_backlog"/> Use Countdown Timers</label></div></td>
+				<td><div class="controls"><label class="control-label">{{ _('On Color') }}</label><input type="color" class="input input-small" data-bind="value: on_color" /><div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Off Color') }}</label><input type="color" class="input input-small" data-bind="value: off_color" /><div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Unknown Color') }}</label><input type="color" class="input input-small" data-bind="value: unknown_color" /></div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Icon Class') }}</label><input type="text" class="input-block-level" data-bind="value: icon, iconpicker: icon,iconpickerOptions: {hideOnSelect: true, collision: true}" /><div></td>
 				<td></td>
-				<td></td>
-			</tr>
-			<tr data-bind="visible: use_backlog">
-				<td><div class="controls"><label class="control-label">{{ _('On Delay Countdown') }}</label><input type="number" min="0" data-bind="value: backlog_on_delay" class="input input-small" /></div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Off Delay Countdown') }}</label><input type="number" min="0" data-bind="value: backlog_off_delay" class="input input-small" /></div></td>
-				<td></td>
+				<td><div class="controls"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /><div></td>
 			</tr>
 			<tr>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: displayWarning"/> Warning Prompt</label></div></td>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting"/> Warn While Printing</label></div></td>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway"/> Thermal Runaway</label></div></td>
+				<td>
+					<div class="row-fluid controls input-append">
+						<label class="checkbox"><input type="checkbox" data-bind="checked: autoConnect" title="Automatically connect to your printer after configured delay from power on." /> Auto Connect</label>
+						<input type="text" data-bind="value: autoConnectDelay,visible: autoConnect" class="input input-mini" />
+						<span class="add-on" data-bind="visible: autoConnect">secs</span>
+					</div>
+				</td>
+				<td>
+					<div class="row-fluid controls input-append">
+						<label class="checkbox"><input type="checkbox" data-bind="checked: autoDisconnect" title="Automatically disconnect from printer and then power off plug after configured delay." /> Auto Disconnect</label>
+						<input type="text" data-bind="value: autoDisconnectDelay,visible: autoDisconnect" class="input input-mini" />
+						<span class="add-on" data-bind="visible: autoDisconnect">secs</span>
+					</div>
+				</td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: automaticShutdownEnabled" title="Automatically power off on print completion." /> Print Complete Off</label></div></td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: displayWarning" title="Prompt for confirmation before powering off via the navbar button." /> Warning Prompt</label></div></td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting" title="Prompt for confimration before powering off when a print is active." /> Warn While Printing</label></div></td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway" title="Power off if temperature exceeds configured max temperatures." /> Thermal Runaway</label></div></td>
 			</tr>
 			<tr>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: autoConnect"/> Auto Connect</label><input type="text" data-bind="value: autoConnectDelay,visible: autoConnect" class="input input-small" /></div></td>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: autoDisconnect"/> Auto Disconnect</label><input type="text" data-bind="value: autoDisconnectDelay,visible: autoDisconnect" class="input input-small" /></div></td>
+				<td colspan="3">
+					<div class="row-fluid controls">
+						<label class="checkbox"><input type="checkbox" data-bind="checked: use_backlog"/> Use Countdown Timers</label>
+					</div>
+					<div class="row-fluid" data-bind="visible: use_backlog">
+						<div class="span6">
+							<div class="controls input-append">
+								<label class="control-label">{{ _('On Delay Countdown') }}</label>
+								<input type="number" min="0" data-bind="value: backlog_on_delay" class="input input-mini" />
+								<span class="add-on">secs</span>
+							</div>
+						</div>
+						<div class="span6">
+							<div class="controls input-append">
+								<label class="control-label">{{ _('Off Delay Countdown') }}</label>
+								<input type="number" min="0" data-bind="value: backlog_off_delay" class="input input-small" />
+								<span class="add-on">secs</span>
+							</div>
+						</div>
+					</div>
+				</td>
+				<td colspan="3">
+					<div class="row-fluid controls">
+						<label class="checkbox"><input type="checkbox" data-bind="checked: gcodeEnabled"/>GCODE On <span class="label" title="Click to copy this gcode command to power on relay to the clipboard." data-bind="text: $root.gcodeOnString($data),visible: gcodeEnabled,click: function(data, evt) {copyToClipboard($(evt.currentTarget).text())}"></span> / Off <span class="label" title="Click to copy this gcode command to power off relay." data-bind="text: $root.gcodeOffString($data),visible: gcodeEnabled,click: function(data, evt) {copyToClipboard($(evt.currentTarget).text())}"></span> Trigger</label>
+					</div>
+					<div class="row-fluid" data-bind="visible: gcodeEnabled">
+						<div class="span6">
+							<div class="controls input-append">
+								<label class="control-label">{{ _('GCODE On Delay') }}</label>
+								<input type="number" data-bind="value: gcodeOnDelay" class="input input-mini" />
+								<span class="add-on">secs</span>
+							</div>
+						</div>
+						<div class="span6">
+							<div class="controls input-append">
+								<label class="control-label">{{ _('GCODE Off Delay') }}</label>
+								<input type="number" data-bind="value: gcodeOffDelay" class="input input-mini" />
+								<span class="add-on">secs</span>
+							</div>
+						</div>
+					</div>
+				</td>
 			</tr>
 			<tr>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: gcodeEnabled"/> GCODE Trigger</label></div></td>
-				<td><span class="label" title="Use this gcode command to power on relay." data-bind="text: $root.gcodeOnString($data),visible: gcodeEnabled"></span></td>
-				<td><span class="label" title="Use this gcode command to power off relay." data-bind="text: $root.gcodeOffString($data),visible: gcodeEnabled"></span></td>
-			</tr>
-			<tr data-bind="visible: gcodeEnabled">
-				<td><div class="controls"><label class="control-label">{{ _('GCODE On Delay') }}</label><input type="text" data-bind="value: gcodeOnDelay" class="input input-small" /></div></td>
-				<td><div class="controls"><label class="control-label">{{ _('GCODE Off Delay') }}</label><input type="text" data-bind="value: gcodeOffDelay" class="input input-small" /></div></td>
-				<td></td>
-			</tr>
-			<tr>
-				<td colspan="2" style="vertical-align: bottom"><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: sysCmdOn"/> Run System Command After On</label><input type="text" data-bind="value: sysRunCmdOn,visible: sysCmdOn" class="input-block-level" /></div></td>
-				<td style="vertical-align: bottom"><div class="controls" data-bind="visible: sysRunCmdOn"><label class="control-label">{{ _('Delay') }}</label><input type="text" data-bind="value: sysCmdOnDelay"  class="input input-small" /></div></td>
-			</tr>
-			<tr>
-				<td colspan="2" style="vertical-align: bottom"><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: sysCmdOff"/> Run System Command Before Off</label><input type="text" data-bind="value: sysRunCmdOff,visible: sysCmdOff" class="input-block-level" /></div></td>
-				<td style="vertical-align: bottom"><div class="controls" data-bind="visible: sysRunCmdOff"><label class="control-label">{{ _('Delay') }}</label><input type="text" data-bind="value: sysCmdOffDelay"  class="input input-small" /></div></td>
+				<td colspan="3">
+					<div class="row-fluid controls">
+						<label class="checkbox"><input type="checkbox" data-bind="checked: sysCmdOn"/> Run System Command After On</label>
+					</div>
+					<div class="row-fluid controls" data-bind="visible: sysCmdOn">
+						<div class="span8">
+							<div class="controls">
+								<label class="control-label">{{ _('System Command to Run') }}</label>
+								<input type="text" data-bind="value: sysRunCmdOn,visible: sysCmdOn" class="input-block-level" />
+							</div>
+						</div>
+						<div class="span4">
+							<div class="controls input-append">
+								<label class="control-label">{{ _('Delay') }}</label>
+								<input type="number" data-bind="value: sysCmdOnDelay"  class="input input-mini" />
+								<span class="add-on">secs</span>
+							</div>
+						</div>
+					</div>
+				</td>
+				<td colspan="3">
+					<div class="row-fluid controls">
+						<label class="checkbox"><input type="checkbox" data-bind="checked: sysCmdOff"/> Run System Command Before Off</label>
+					</div>
+					<div class="row-fluid controls" data-bind="visible: sysCmdOff">
+						<div class="span8">
+							<div class="controls">
+								<label class="control-label">{{ _('System Command to Run') }}</label>
+								<input type="text" data-bind="value: sysRunCmdOff,visible: sysCmdOff" class="input-block-level" />
+							</div>
+						</div>
+						<div class="span4">
+							<div class="controls input-append">
+								<label class="control-label">{{ _('Delay') }}</label>
+								<input type="number" data-bind="value: sysCmdOffDelay"  class="input input-mini" />
+								<span class="add-on">secs</span>
+							</div>
+						</div>
+					</div>
+				</td>
 			</tr>
 		</table>
 	</div>
