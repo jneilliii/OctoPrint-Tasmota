@@ -445,7 +445,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if self.thermal_runaway_triggered == True:
 				for plug in self._settings.get(['arrSmartplugs']):
 					if plug["thermal_runaway"] == True:
-						self.turn_off(plug["ip"],plug["idx"],username = plug["username"], password = plug["password"], backlog_delay = plug["backlog_off_delay"])
+						self.turn_off(plug["ip"],plug["idx"])
 
 	def monitor_temperatures(self, comm, parsed_temps):
 		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered == False:
