@@ -96,12 +96,12 @@
 	<div class="modal-body">
 		<table class="table table-condensed">
 			<tr>
-				<td><div class="control-group" data-bind="css: {error: ip().match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/) == null}"><div class="controls"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /><div></div></td>
+				<td><div class="control-group" data-bind="css: {error: ip().length == 0}"><div class="controls"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /><div></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Index') }}</label><input type="number" min="1" class="input-block-level" data-bind="value: idx" /><div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Label') }}</label><input type="text" class="input input-small" data-bind="value: label" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Username') }}</label><input type="text" class="input-block-level" data-bind="value: username" /><div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Password') }}</label><input type="text" class="input input-small" data-bind="value: password" /></div></td>
-				<td style="text-align: center;vertical-align: middle;"><button class="btn" data-bind="click: $root.checkSetOption26, enable: ip().match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/)">Verify</button></td>
+				<td style="text-align: center;vertical-align: middle;"><button class="btn" data-bind="click: $root.checkSetOption26, enable: ip().length > 0">Verify</button></td>
 			</tr>
 			<tr>
 				<td><div class="controls"><label class="control-label">{{ _('On Color') }}</label><input type="color" class="input input-small" data-bind="value: on_color" /><div></td>
