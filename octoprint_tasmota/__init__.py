@@ -73,8 +73,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_after_startup(self):
 		self._logger.info("Tasmota loaded!")
-		if self._settings.get(["polling_enabled"]) and self._settings.get(["polling_interval"]) > 0:
-			self.poll_status = RepeatedTimer(int(self._settings.get(["polling_interval"]))*60, self.check_statuses)
+		if self._settings.get_boolean(["polling_enabled"]) and self._settings.get_int(["polling_interval"]) > 0:
+			self.poll_status = RepeatedTimer(int(self._settings.get_int(["polling_interval"]))*60, self.check_statuses)
 			self.poll_status.start()
 
 	##~~ SettingsPlugin mixin
@@ -83,7 +83,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		return dict(
 			debug_logging = False,
 			polling_enabled = False,
-			polling_interval = 1,
+			polling_interval = 5,
 			thermal_runaway_monitoring = False,
 			thermal_runaway_max_bed = 120,
 			thermal_runaway_max_extruder = 300,
@@ -95,7 +95,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def on_settings_save(self, data):
 		old_debug_logging = self._settings.get_boolean(["debug_logging"])
 		old_polling_value = self._settings.get_boolean(["polling_enabled"])
-		old_polling_timer = self._settings.get(["polling_interval"])
+		old_polling_timer = self._settings.get_int(["polling_interval"])
 		old_automatic_power_off = self._settings.get_boolean(["automatic_power_off"])
 
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
@@ -108,7 +108,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		new_debug_logging = self._settings.get_boolean(["debug_logging"])
 		new_polling_value = self._settings.get_boolean(["polling_enabled"])
-		new_polling_timer = self._settings.get(["polling_interval"])
+		new_polling_timer = self._settings.get_int(["polling_interval"])
 
 		if old_debug_logging != new_debug_logging:
 			if new_debug_logging:
