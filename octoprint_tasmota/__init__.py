@@ -73,7 +73,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_after_startup(self):
 		self._logger.info("Tasmota loaded!")
-		if self._settings.get(["polling_enabled"]):
+		if self._settings.get(["polling_enabled"]) and self._settings.get(["polling_interval"]) > 0:
 			self.poll_status = RepeatedTimer(int(self._settings.get(["polling_interval"]))*60, self.check_statuses)
 			self.poll_status.start()
 
@@ -83,7 +83,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		return dict(
 			debug_logging = False,
 			polling_enabled = False,
-			polling_interval = 0,
+			polling_interval = 1,
 			thermal_runaway_monitoring = False,
 			thermal_runaway_max_bed = 120,
 			thermal_runaway_max_extruder = 300,
@@ -120,7 +120,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if self.poll_status:
 				self.poll_status.cancel()
 				
-			if new_polling_value:
+			if new_polling_value and new_polling_timer > 0:
 				self.poll_status = RepeatedTimer(int(self._settings.get(["polling_interval"]))*60, self.check_statuses)
 				self.poll_status.start()
 
