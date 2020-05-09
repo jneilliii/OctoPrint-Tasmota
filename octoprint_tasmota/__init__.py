@@ -15,11 +15,65 @@ import threading
 import sqlite3
 from datetime import datetime, timedelta
 
+try:
+	from octoprint.util import ResettableTimer
+except:
+	class ResettableTimer(threading.Thread):
+		def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
+			threading.Thread.__init__(self)
+			self._event = threading.Event()
+			self._mutex = threading.Lock()
+			self.is_reset = True
+
+			if args is None:
+				args = []
+			if kwargs is None:
+				kwargs = dict()
+
+			self.interval = interval
+			self.function = function
+			self.args = args
+			self.kwargs = kwargs
+			self.on_cancelled = on_cancelled
+			self.on_reset = on_reset
+
+
+		def run(self):
+			while self.is_reset:
+				with self._mutex:
+					self.is_reset = False
+				self._event.wait(self.interval)
+
+			if not self._event.isSet():
+				self.function(*self.args, **self.kwargs)
+			with self._mutex:
+				self._event.set()
+
+		def cancel(self):
+			with self._mutex:
+				self._event.set()
+
+			if callable(self.on_cancelled):
+				self.on_cancelled()
+
+		def reset(self, interval=None):
+			with self._mutex:
+				if interval:
+					self.interval = interval
+
+				self.is_reset = True
+				self._event.set()
+				self._event.clear()
+
+			if callable(self.on_reset):
+				self.on_reset()
+
 class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							octoprint.plugin.AssetPlugin,
 							octoprint.plugin.TemplatePlugin,
 							octoprint.plugin.SimpleApiPlugin,
 							octoprint.plugin.StartupPlugin,
+							octoprint.plugin.ProgressPlugin,
 							octoprint.plugin.EventHandlerPlugin):
 
 	def __init__(self):
@@ -28,10 +82,15 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self.thermal_runaway_triggered = False
 		self.poll_status = None
 		self.abortTimeout = 0
-		self._automatic_shutdown_enabled = False
 		self._timeout_value = None
 		self._abort_timer = None
-		self._wait_for_timelapse_timer = None
+		self._countdown_active = False
+		self._waitForHeaters = False
+		self._waitForTimelapse = False
+		self._timelapse_active = False
+		self._skipIdleTimer = False
+		self.powerOffWhenIdle = False
+		self._idleTimer = None
 
 	##~~ StartupPlugin mixin
 
@@ -65,11 +124,18 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self.abortTimeout = self._settings.get_int(["abortTimeout"])
 		self._tasmota_logger.debug("abortTimeout: %s" % self.abortTimeout)
 
-		self.automatic_power_off = self._settings.get_boolean(["automatic_power_off"])
-		self._tasmota_logger.debug("automatic_power_off: %s" % self.automatic_power_off)
+		self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
+		self._tasmota_logger.debug("powerOffWhenIdle: %s" % self.powerOffWhenIdle)
 
-		if self.automatic_power_off:
-			self._automatic_shutdown_enabled = True
+		self.idleTimeout = self._settings.get_int(["idleTimeout"])
+		self._tasmota_logger.debug("idleTimeout: %s" % self.idleTimeout)
+		self.idleIgnoreCommands = self._settings.get(["idleIgnoreCommands"])
+		self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
+		self._tasmota_logger.debug("idleIgnoreCommands: %s" % self.idleIgnoreCommands)
+		self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
+		self._tasmota_logger.debug("idleTimeoutWaitTemp: %s" % self.idleTimeoutWaitTemp)
+
+		self._start_idle_timer()
 
 	def on_after_startup(self):
 		self._logger.info("Tasmota loaded!")
@@ -87,28 +153,48 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			thermal_runaway_monitoring = False,
 			thermal_runaway_max_bed = 120,
 			thermal_runaway_max_extruder = 300,
+			event_on_error_monitoring = False,
+			event_on_disconnect_monitoring = False,
 			arrSmartplugs = [],
 			abortTimeout = 30,
-			automatic_power_off = False
+			powerOffWhenIdle = False,
+			idleTimeout = 30,
+			idleIgnoreCommands = 'M105',
+			idleTimeoutWaitTemp = 50
 		)
 
 	def on_settings_save(self, data):
 		old_debug_logging = self._settings.get_boolean(["debug_logging"])
-		old_polling_value = self._settings.get_boolean(["polling_enabled"])
-		old_polling_timer = self._settings.get_int(["polling_interval"])
-		old_automatic_power_off = self._settings.get_boolean(["automatic_power_off"])
+		old_polling_value = self._settings.get_boolean(["pollingEnabled"])
+		old_polling_timer = self._settings.get(["pollingInterval"])
+		old_powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
+		old_idleTimeout = self._settings.get_int(["idleTimeout"])
+		old_idleIgnoreCommands = self._settings.get(["idleIgnoreCommands"])
+		old_idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
 
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 		self.abortTimeout = self._settings.get_int(["abortTimeout"])
-		self._automatic_shutdown_enabled = self._settings.get_boolean(["automatic_power_off"])
+		self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
 
-		if self._automatic_shutdown_enabled != old_automatic_power_off:
-			self._plugin_manager.send_plugin_message(self._identifier, dict(automaticShutdownEnabled=self._automatic_shutdown_enabled, type="timeout", timeout_value=self._timeout_value))
+		self.idleTimeout = self._settings.get_int(["idleTimeout"])
+		self.idleIgnoreCommands = self._settings.get(["idleIgnoreCommands"])
+		self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
+		self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
+
+		if self.powerOffWhenIdle != old_powerOffWhenIdle:
+			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
+
+			if self.powerOffWhenIdle == True:
+				self._tasmota_logger.debug("Settings saved, Automatic Power Off Endabled, starting idle timer...")
+				self._start_idle_timer()
+			else:
+				self._tasmota_logger.debug("Settings saved, Automatic Power Off Disabled, stopping idle timer...")
+				self._stop_idle_timer()
 
 		new_debug_logging = self._settings.get_boolean(["debug_logging"])
-		new_polling_value = self._settings.get_boolean(["polling_enabled"])
-		new_polling_timer = self._settings.get_int(["polling_interval"])
+		new_polling_value = self._settings.get_boolean(["pollingEnabled"])
+		new_polling_timer = self._settings.get(["pollingInterval"])
 
 		if old_debug_logging != new_debug_logging:
 			if new_debug_logging:
@@ -119,13 +205,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if old_polling_value != new_polling_value or old_polling_timer != new_polling_timer:
 			if self.poll_status:
 				self.poll_status.cancel()
-				
-			if new_polling_value and new_polling_timer > 0:
-				self.poll_status = RepeatedTimer(int(self._settings.get(["polling_interval"]))*60, self.check_statuses)
+
+			if new_polling_value:
+				self.poll_status = RepeatedTimer(int(self._settings.get(["pollingInterval"]))*60, self.check_statuses)
 				self.poll_status.start()
 
 	def get_settings_version(self):
-		return 7
+		return 8
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < 6:
@@ -137,6 +223,14 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			arrSmartplugs_new = []
 			for plug in self._settings.get(['arrSmartplugs']):
 				plug["automaticShutdownEnabled"] = False
+				arrSmartplugs_new.append(plug)
+			self._settings.set(["arrSmartplugs"],arrSmartplugs_new)
+		if current == 7 or current == 6:
+			# Add new fields
+			arrSmartplugs_new = []
+			for plug in self._settings.get(['arrSmartplugs']):
+				plug["event_on_error"] = False
+				plug["event_on_disconnect"] = False
 				arrSmartplugs_new.append(plug)
 			self._settings.set(["arrSmartplugs"],arrSmartplugs_new)
 
@@ -158,25 +252,51 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			dict(type="sidebar", icon="plug", custom_bindings=True, data_bind="visible: show_sidebar", template="tasmota_sidebar.jinja2", template_header="tasmota_sidebar_header.jinja2", styles=["display: none"])
 		]
 
+	##~~ ProgressPlugin mixin
+
+	def on_print_progress(self, storage, path, progress):
+		if self.powerOffWhenIdle == True and not (self._skipIdleTimer == True):
+			self._tasmota_logger.debug("Resetting idle timer during print progress (%s)..." % progress)
+			self._waitForHeaters = False
+			self._reset_idle_timer()
+
 	##~~ EventHandlerPlugin mixin
 
 	def on_event(self, event, payload):
+		# Error Event
+		if event == Events.ERROR and self._settings.getBoolean(["event_on_error_monitoring"]) == True:
+			self._tasmota_logger.debug("powering off due to %s event." % event)
+			for plug in self._settings.get(['arrSmartplugs']):
+				if plug["event_on_error"] == True:
+					self._tasmota_logger.debug("powering off %s:%s due to %s event." % (plug["ip"], plug["idx"], event))
+					self.turn_off(plug["ip"], plug["idx"])
+		# Disconnected Event
+		if event == Events.DISCONNECTED and self._settings.getBoolean(["event_on_disconnect_monitoring"]) == True:
+			self._tasmota_logger.debug("powering off due to %s event." % event)
+			for plug in self._settings.get(['arrSmartplugs']):
+				if plug["event_on_disconnect"] == True:
+					self._tasmota_logger.debug("powering off %s:%s due to %s event." % (plug["ip"], plug["idx"], event))
+					self.turn_off(plug["ip"])
+		# Client Opened Event
 		if event == Events.CLIENT_OPENED:
-			self._plugin_manager.send_plugin_message(self._identifier, dict(automaticShutdownEnabled=self._automatic_shutdown_enabled, type="timeout", timeout_value=self._timeout_value))
+			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
 			return
-		if event == Events.PRINT_FAILED and not self._printer.is_closed_or_error():
-			#Cancelled job
-			return
-		if event == Events.PRINT_STARTED and self._automatic_shutdown_enabled:
+		# Print Started Event
+		if event == Events.PRINT_STARTED and self.powerOffWhenIdle == True:
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
 				self._abort_timer = None
+				self._tasmota_logger.debug("Power off aborted because starting new print.")
+			if self._idleTimer is not None:
+				self._reset_idle_timer()
 			self._timeout_value = None
-			self._tasmota_logger.debug("Power off aborted because starting new print.")
-			self._plugin_manager.send_plugin_message(self._identifier, dict(automaticShutdownEnabled=self._automatic_shutdown_enabled, type="timeout", timeout_value=self._timeout_value))
-		if event in [Events.PRINT_DONE, Events.PRINT_FAILED] and self._automatic_shutdown_enabled:
-			self._timer_start()
-			return
+			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
+		if self.powerOffWhenIdle == True and event == Events.MOVIE_RENDERING:
+			self._tasmota_logger.debug("Timelapse generation started: %s" % payload.get("movie_basename", ""))
+			self._timelapse_active = True
+		if self._timelapse_active and event == Events.MOVIE_DONE or event == Events.MOVIE_FAILED:
+			self._tasmota_logger.debug("Timelapse generation finished: %s. Return Code: %s" % (payload.get("movie_basename", ""), payload.get("returncode", "completed")))
+			self._timelapse_active = False
 
 	##~~ SimpleApiPlugin mixin
 
@@ -201,11 +321,16 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		if chk.upper() == "ON":
 			if plug["autoConnect"] and self._printer.is_closed_or_error():
-				c = threading.Timer(int(plug["autoConnectDelay"]),self._printer.connect)
+				self._logger.info(self._settings.global_get(['serial']))
+				c = threading.Timer(int(plug["autoConnectDelay"]),self._printer.connect, kwargs=dict(port=self._settings.global_get(['serial', 'port'])))
 				c.start()
 			if plug["sysCmdOn"]:
 				t = threading.Timer(int(plug["sysCmdOnDelay"]),os.system,args=[plug["sysRunCmdOn"]])
 				t.start()
+			if self.powerOffWhenIdle == True and plug["automaticShutdownEnabled"] == True:
+				self._tasmota_logger.debug("Resetting idle timer since plug %s:%s was just turned on." % (plugip, plugidx))
+				self._waitForHeaters = False
+				self._reset_idle_timer()
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
 		elif chk.upper() == "OFF":
 			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
@@ -356,15 +481,23 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			import flask
 			return flask.jsonify(response)
 		elif command == 'enableAutomaticShutdown':
-			self._automatic_shutdown_enabled = True
+			self.powerOffWhenIdle = True
 		elif command == 'disableAutomaticShutdown':
-			self._automatic_shutdown_enabled = False
+			self.powerOffWhenIdle = False
 		elif command == 'abortAutomaticShutdown':
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
 				self._abort_timer = None
 			self._timeout_value = None
+			for plug in self._settings.get(["arrSmartplugs"]):
+				if plug["use_backlog"] and int(plug["backlog_off_delay"]) > 0:
+					backlog_url = "http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=backlog"
+					webresponse = requests.get(backlog_url)
+					self._tasmota_logger.debug("Cleared countdown rules for %s" % plug["ip"])
+					self._tasmota_logger.debug(webresponse)
 			self._tasmota_logger.debug("Power off aborted.")
+			self._tasmota_logger.debug("Restarting idle timer.")
+			self._reset_idle_timer()
 		elif command == 'getEnergyData':
 			self._logger.info(data);
 			response = {}
@@ -390,14 +523,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 			import flask
 			return flask.jsonify(response)
-
 		if command == "enableAutomaticShutdown" or command == "disableAutomaticShutdown":
-			self._tasmota_logger.debug("Automatic power off setting changed: %s" % self._automatic_shutdown_enabled)
-			self._settings.set_boolean(["automatic_power_off"], self._automatic_shutdown_enabled)
+			self._tasmota_logger.debug("Automatic power off setting changed: %s" % self.powerOffWhenIdle)
+			self._settings.set_boolean(["powerOffWhenIdle"], self.powerOffWhenIdle)
 			self._settings.save()
-			eventManager().fire(Events.SETTINGS_UPDATED)
+			#eventManager().fire(Events.SETTINGS_UPDATED)
 		if command == "enableAutomaticShutdown" or command == "disableAutomaticShutdown" or command == "abortAutomaticShutdown":
-			self._plugin_manager.send_plugin_message(self._identifier, dict(automaticShutdownEnabled=self._automatic_shutdown_enabled, type="timeout", timeout_value=self._timeout_value))
+			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
 
 	##~~ Gcode processing hook
 
@@ -413,23 +545,27 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self.turn_on(plug["ip"], plug["idx"])
 
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-		if gcode in ["M80","M81"] and cmd.count(" ") >= 2:
-			plugip = cmd.split()[1]
-			plugidx = cmd.split()[2]
-			for plug in self._settings.get(["arrSmartplugs"]):
-				if plug["ip"].upper() == plugip.upper() and plug["idx"] == plugidx and plug["gcodeEnabled"]:
-					if cmd.startswith("M80"):
-						self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
-						t = threading.Timer(int(plug["gcodeOnDelay"]),self.gcode_on, [plug])
-						t.start()
-						return
-					elif cmd.startswith("M81"):
-						self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
-						t = threading.Timer(int(plug["gcodeOffDelay"]),self.gcode_off, [plug])
-						t.start()
-						return
-					else:
-						return
+		if gcode:
+			if gcode in ["M80","M81"] and cmd.count(" ") >= 2:
+				plugip = cmd.split()[1]
+				plugidx = cmd.split()[2]
+				for plug in self._settings.get(["arrSmartplugs"]):
+					if plug["ip"].upper() == plugip.upper() and plug["idx"] == plugidx and plug["gcodeEnabled"]:
+						if cmd.startswith("M80"):
+							self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
+							t = threading.Timer(int(plug["gcodeOnDelay"]),self.gcode_on, [plug])
+							t.start()
+							return
+						elif cmd.startswith("M81"):
+							self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
+							t = threading.Timer(int(plug["gcodeOffDelay"]),self.gcode_off, [plug])
+							t.start()
+							return
+						else:
+							return
+			elif self.powerOffWhenIdle and not (gcode in self._idleIgnoreCommandsArray):
+				self._waitForHeaters = False
+				self._reset_idle_timer()
 			return
 
 	##~~ Temperatures received hook
@@ -454,7 +590,131 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			t.start()
 		return parsed_temps
 
-	##~~ Automatic Power Off
+	##~~ Idle Timeout
+
+	def _start_idle_timer(self):
+		self._stop_idle_timer()
+
+		if self.powerOffWhenIdle:
+			self._idleTimer = ResettableTimer(self.idleTimeout * 60, self._idle_poweroff)
+			self._idleTimer.start()
+
+	def _stop_idle_timer(self):
+		if self._idleTimer:
+			self._idleTimer.cancel()
+			self._idleTimer = None
+
+	def _reset_idle_timer(self):
+		try:
+			if self._idleTimer.is_alive():
+				self._idleTimer.reset()
+			else:
+				raise Exception()
+		except:
+			self._start_idle_timer()
+
+	def _idle_poweroff(self):
+		if not self.powerOffWhenIdle:
+			return
+
+		if self._waitForHeaters:
+			return
+
+		if self._waitForTimelapse:
+			return
+
+		if self._printer.is_printing() or self._printer.is_paused():
+			return
+
+		self._tasmota_logger.debug("Idle timeout reached after %s minute(s). Turning heaters off prior to powering off plugs." % self.idleTimeout)
+		if self._wait_for_heaters():
+			self._tasmota_logger.debug("Heaters below temperature.")
+			if self._wait_for_timelapse():
+				self._timer_start()
+		else:
+			self._tasmota_logger.debug("Aborted power off due to activity.")
+
+	##~~ Timelapse Monitoring
+
+	def _wait_for_timelapse(self):
+		self._waitForTimelapse = True
+		self._tasmota_logger.debug("Checking timelapse status before shutting off power...")
+
+		while True:
+			if not self._waitForTimelapse:
+				return False
+
+			if not self._timelapse_active:
+				self._waitForTimelapse = False
+				return True
+
+			self._tasmota_logger.debug("Waiting for timelapse before shutting off power...")
+			time.sleep(5)
+
+	##~~ Temperature Cooldown
+
+	def _wait_for_heaters(self):
+		self._waitForHeaters = True
+		heaters = self._printer.get_current_temperatures()
+
+		for heater, entry in heaters.items():
+			target = entry.get("target")
+			if target is None:
+				# heater doesn't exist in fw
+				continue
+
+			try:
+				temp = float(target)
+			except ValueError:
+				# not a float for some reason, skip it
+				continue
+
+			if temp != 0:
+				self._tasmota_logger.debug("Turning off heater: %s" % heater)
+				self._skipIdleTimer = True
+				self._printer.set_temperature(heater, 0)
+				self._skipIdleTimer = False
+			else:
+				self._tasmota_logger.debug("Heater %s already off." % heater)
+
+		while True:
+			if not self._waitForHeaters:
+				return False
+
+			heaters = self._printer.get_current_temperatures()
+
+			highest_temp = 0
+			heaters_above_waittemp = []
+			for heater, entry in heaters.items():
+				if not heater.startswith("tool"):
+					continue
+
+				actual = entry.get("actual")
+				if actual is None:
+					# heater doesn't exist in fw
+					continue
+
+				try:
+					temp = float(actual)
+				except ValueError:
+					# not a float for some reason, skip it
+					continue
+
+				self._tasmota_logger.debug("Heater %s = %sC" % (heater,temp))
+				if temp > self.idleTimeoutWaitTemp:
+					heaters_above_waittemp.append(heater)
+
+				if temp > highest_temp:
+					highest_temp = temp
+
+			if highest_temp <= self.idleTimeoutWaitTemp:
+				self._waitForHeaters = False
+				return True
+
+			self._tasmota_logger.debug("Waiting for heaters(%s) before shutting power off..." % ', '.join(heaters_above_waittemp))
+			time.sleep(5)
+
+	##~~ Abort Power Off Timer
 
 	def _timer_start(self):
 		if self._abort_timer is not None:
@@ -471,7 +731,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		self._timeout_value -= 1
-		self._plugin_manager.send_plugin_message(self._identifier, dict(automaticShutdownEnabled=self._automatic_shutdown_enabled, type="timeout", timeout_value=self._timeout_value))
+		self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
 		if self._timeout_value <= 0:
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
@@ -479,10 +739,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._shutdown_system()
 
 	def _shutdown_system(self):
-		self._tasmota_logger.debug("Automatically shutting down enabled plugs.")
+		self._tasmota_logger.debug("Automatically powering off enabled plugs.")
 		for plug in self._settings.get(['arrSmartplugs']):
 			if plug.get("automaticShutdownEnabled", False):
-				response = self.turn_off("{ip}".format(**plug),"{idx}".format(**plug))
+				self.turn_off("{ip}".format(**plug),"{idx}".format(**plug))
 
 	##~~ Utility functions
 
