@@ -49,11 +49,11 @@ $(function() {
 		// Hack to remove automatically added Cancel button
 		// See https://github.com/sciactive/pnotify/issues/141
 		PNotify.prototype.options.confirm.buttons = [];
-		self.timeoutPopupText = gettext('Powering off in ');
+		self.timeoutPopupText = '';
 		self.timeoutPopupOptions = {
-			title: gettext('Automatic Power Off'),
+			title: '',
 			type: 'notice',
-			icon: true,
+			icon: false,
 			hide: false,
 			confirm: {
 				confirm: true,
@@ -159,7 +159,7 @@ $(function() {
 				end_date: self.graph_end_date()
 			}),
 			contentType: "application/json; charset=UTF-8"
-			}).done(function(data){					
+			}).done(function(data){
 					console.log(data);
 					//update plotly graph here.
 					var energy_labels = [0,0,'Current','Power','Total'];
@@ -251,7 +251,9 @@ $(function() {
 							   'backlog_on_delay':ko.observable(0),
 							   'backlog_off_delay':ko.observable(0),
 							   'thermal_runaway':ko.observable(false),
-							  'automaticShutdownEnabled':ko.observable(false)});
+							   'automaticShutdownEnabled':ko.observable(false),
+							   'event_on_error':ko.observable(false),
+							   'event_on_disconnect':ko.observable(false)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}
@@ -274,12 +276,14 @@ $(function() {
 				return;
 			}
 
-			if(data.hasOwnProperty("automaticShutdownEnabled")) {
-				self.automaticShutdownEnabled(data.automaticShutdownEnabled);
+			if(data.hasOwnProperty("powerOffWhenIdle")) {
+				self.settings.settings.plugins.tasmota.powerOffWhenIdle(data.powerOffWhenIdle);
 
 				if (data.type == "timeout") {
 					if ((data.timeout_value != null) && (data.timeout_value > 0)) {
-						self.timeoutPopupOptions.text = self.timeoutPopupText + data.timeout_value;
+						var progress_percent = Math.floor((data.timeout_value/self.settings.settings.plugins.tasmota.abortTimeout())*100)
+						var progress_class = (progress_percent<25)?'progress-danger':(progress_percent>75)?'progress-success':'progress-warning';
+						self.timeoutPopupOptions.text = '<div class="progress progress-tasmota '+progress_class+'"><div class="bar">'+gettext('Powering Off in ')+' '+data.timeout_value+' '+gettext('secs')+'</div><div class="progress-text" style="clip-path: inset(0 0 0 '+progress_percent+'%);-webkit-clip-path: inset(0 0 0 '+progress_percent+'%);">'+gettext('Powering Off in ')+' '+data.timeout_value+' '+gettext('secs')+'</div></div>';
 						if (typeof self.timeoutPopup != "undefined") {
 							self.timeoutPopup.update(self.timeoutPopupOptions);
 						} else {
@@ -293,7 +297,6 @@ $(function() {
 						}
 					}
 				}
-				return;
 			} else {
 				console.log(data);
 				plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
