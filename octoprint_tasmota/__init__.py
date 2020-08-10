@@ -323,9 +323,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if plug["autoConnect"] and self._printer.is_closed_or_error():
 				self._logger.info(self._settings.global_get(['serial']))
 				c = threading.Timer(int(plug["autoConnectDelay"]),self._printer.connect, kwargs=dict(port=self._settings.global_get(['serial', 'port'])))
+				c.daemon = True
 				c.start()
 			if plug["sysCmdOn"]:
 				t = threading.Timer(int(plug["sysCmdOnDelay"]),os.system,args=[plug["sysRunCmdOn"]])
+				t.daemon = True
 				t.start()
 			if self.powerOffWhenIdle == True and plug["automaticShutdownEnabled"] == True:
 				self._tasmota_logger.debug("Resetting idle timer since plug %s:%s was just turned on." % (plugip, plugidx))
@@ -353,6 +355,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if plug["sysCmdOff"]:
 				self._tasmota_logger.debug("Running system command: %s in %s" % (plug["sysRunCmdOff"],plug["sysCmdOffDelay"]))
 				t = threading.Timer(int(plug["sysCmdOffDelay"]),os.system,args=[plug["sysRunCmdOff"]])
+				t.daemon = True
 				t.start()
 
 			if plug["autoDisconnect"]:
@@ -554,11 +557,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 						if cmd.startswith("M80"):
 							self._tasmota_logger.debug("Received M80 command, attempting power on of %s index %s." % (plugip,plugidx))
 							t = threading.Timer(int(plug["gcodeOnDelay"]),self.gcode_on, [plug])
+							t.daemon = True
 							t.start()
 							return
 						elif cmd.startswith("M81"):
 							self._tasmota_logger.debug("Received M81 command, attempting power off of %s index %s." % (plugip,plugidx))
 							t = threading.Timer(int(plug["gcodeOffDelay"]),self.gcode_off, [plug])
+							t.daemon = True
 							t.start()
 							return
 						else:
@@ -587,6 +592,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered == False:
 			# Run inside it's own thread to prevent communication blocking
 			t = threading.Timer(0,self.check_temps,[parsed_temps])
+			t.daemon = True
 			t.start()
 		return parsed_temps
 
@@ -597,6 +603,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		if self.powerOffWhenIdle:
 			self._idleTimer = ResettableTimer(self.idleTimeout * 60, self._idle_poweroff)
+			self._idleTimer.daemon = True
 			self._idleTimer.start()
 
 	def _stop_idle_timer(self):
