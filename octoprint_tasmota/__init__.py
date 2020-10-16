@@ -276,7 +276,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			for plug in self._settings.get(['arrSmartplugs']):
 				if plug["event_on_disconnect"] == True:
 					self._tasmota_logger.debug("powering off %s:%s due to %s event." % (plug["ip"], plug["idx"], event))
-					self.turn_off(plug["ip"])
+					self.turn_off(plug["ip"], plug["idx"])
 		# Client Opened Event
 		if event == Events.CLIENT_OPENED:
 			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
