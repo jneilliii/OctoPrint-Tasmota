@@ -56,7 +56,13 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
   - When checked will run system command configured in **System Command On** setting after a delay in seconds configured in **System Command On Delay**.
 - **Cmd Off**
   - When checked will run system command configured in **System Command Off** setting after a delay in seconds configured in **System Command Off Delay**.
-  
+
+## Examples
+
+- **Pi Safe Shutdown**
+  ![Pi Safe Shutdown](tasmota_editor_safe_shutdown.png)
+  With these options the raspberry pi will be shutdown 5 seconds after the idle timeout is reached (as configured on the main settings page) and send a backlog command to your Tasmota device to power off after a 60 second delay.
+
 ## Get Help
 
 If you experience issues with this plugin or need assistance please use the issue tracker by clicking issues above.
