@@ -358,7 +358,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				t.daemon = True
 				t.start()
 
-			if plug["autoDisconnect"]:
+			if plug["autoDisconnect"] and self._printer.is_operational():
 				self._tasmota_logger.debug("Disconnnecting from printer")
 				self._printer.disconnect()
 				time.sleep(int(plug["autoDisconnectDelay"]))
