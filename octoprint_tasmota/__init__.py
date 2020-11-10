@@ -238,7 +238,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_assets(self):
 		return dict(
-			js=["js/jquery-ui.min.js","js/knockout-sortable.js","js/fontawesome-iconpicker.js","js/ko.iconpicker.js","js/plotly-latest.min.js","js/knockout-bootstrap.min.js","js/tasmota.js"],
+			js=["js/jquery-ui.min.js","js/knockout-sortable.1.2.0.js","js/fontawesome-iconpicker.js","js/ko.iconpicker.js","js/plotly-latest.min.js","js/knockout-bootstrap.min.js","js/tasmota.js"],
 			css=["css/font-awesome.min.css","css/font-awesome-v4-shims.min.css","css/fontawesome-iconpicker.css","css/tasmota.css"]
 		)
 
