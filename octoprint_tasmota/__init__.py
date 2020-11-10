@@ -780,6 +780,16 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				user="jneilliii",
 				repo="OctoPrint-Tasmota",
 				current=self._plugin_version,
+                stable_branch=dict(
+                    name="Stable", branch="master", comittish=["master"]
+                ),
+                prerelease_branches=[
+                    dict(
+                        name="Release Candidate",
+                        branch="rc",
+                        comittish=["rc", "master"],
+                    )
+                ],
 
 				# update method: pip
 				pip="https://github.com/jneilliii/OctoPrint-Tasmota/archive/{target_version}.zip"
