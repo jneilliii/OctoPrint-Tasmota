@@ -1,5 +1,5 @@
 <!-- ko foreach: settings.settings.plugins.tasmota.arrSmartplugs -->
-<a href="#" data-toggle="tooltip" data-html="true" data-bind="click: $root.toggleRelay,visible: $root.loginState.loggedIn(), tooltip: {title: label_extended, placement: 'bottom'}" style="display: none;float: left;"><i class="icon" data-bind="css: [currentState(), icon(),(($root.processing().indexOf(ip()) > -1) ? 'icon-spin' : '')].join(' '), style: {color: $root.get_color($data)}" aria-hidden="true"></i><div class="tasmota_label" data-bind="text: $data.label_extended"></div></a>
+<a href="#" data-toggle="tooltip" data-html="true" data-bind="click: $root.toggleRelay,visible: $root.loginState.loggedIn(), tooltip: {title: $root.arrSmartplugsTooltips.get(ip()+'_'+idx()), placement: 'bottom'}" style="display: none;float: left;"><i class="icon" data-bind="css: [$root.arrSmartplugsStates.get(ip()+'_'+idx())(), icon(),(($root.processing().indexOf(ip()) > -1) ? 'icon-spin' : '')].join(' '), style: {color: $root.get_color($data)}" aria-hidden="true"></i><div class="tasmota_label" data-bind="text: $data.label_extended"></div></a>
 <!-- /ko -->
 <div id="TasmotaWarning" data-bind="with: selectedPlug" class="modal hide fade">
     <div class="modal-header">
@@ -8,7 +8,7 @@
     </div>
     <div class="modal-body">
         <p>
-            <!--ko text: ip()--><!--/ko--> is currently <!--ko text: currentState()--><!--/ko-->. 
+            <!--ko text: ip()--><!--/ko--> is currently <!--ko text: currentState()--><!--/ko-->.
         </p>
         <p>
             {{ _('Are you sure you want to proceed?') }}
