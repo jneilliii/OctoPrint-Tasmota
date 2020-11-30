@@ -12,14 +12,15 @@ $(function() {
 		self.loginState = parameters[1];
 
 		self.arrSmartplugs = ko.observableArray();
+		self.arrSmartplugsTooltips = ko.observableDictionary({});
+		self.arrSmartplugsStates = ko.observableDictionary({});
 		self.isPrinting = ko.observable(false);
 		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
 		self.selectedPlug = ko.observable();
 		self.processing = ko.observableArray([]);
 		self.get_color = function(data){
-							console.log(data);
-							switch(data.currentState()) {
+							switch(self.arrSmartplugsStates.get(data.ip()+'_'+data.idx())()) {
 								case "on":
 									return data.on_color();
 									break;
@@ -32,13 +33,13 @@ $(function() {
 						};
 		self.refreshVisible = ko.observable(true);
 		self.automaticShutdownEnabled = ko.observable(false);
-		self.filteredSmartplugs = ko.computed(function(){
+		self.filteredSmartplugs = ko.pureComputed(function(){
 			return ko.utils.arrayFilter(self.arrSmartplugs(), function(item) {
 						return item.automaticShutdownEnabled() == true;
 					});
 		});
 
-		self.show_sidebar = ko.computed(function(){
+		self.show_sidebar = ko.pureComputed(function(){
 			return self.filteredSmartplugs().length > 0;
 		});
 
@@ -207,7 +208,7 @@ $(function() {
 		}
 
 		self.legend_visible = ko.observable(false);
-		
+
 		self.toggle_legend = function(){
 			self.legend_visible(self.legend_visible() ? false : true);
 			Plotly.relayout('tasmota_graph',{showlegend: self.legend_visible()});
@@ -298,11 +299,10 @@ $(function() {
 					}
 				}
 			} else {
-				console.log(data);
 				plug = ko.utils.arrayFirst(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
 					return ((item.ip().toUpperCase() == data.ip.toUpperCase()) && (item.idx() == data.idx));
 					}) || {'ip':data.ip,'idx':data.idx,'currentState':'unknown','gcodeEnabled':false};
-				
+
 				if(self.settings.settings.plugins.tasmota.debug_logging()){
 					console.log(self.settings.settings.plugins.tasmota.arrSmartplugs());
 					console.log('msg received:'+JSON.stringify(data));
@@ -320,24 +320,26 @@ $(function() {
 						tooltip += '<br>' + k + ': ' + data.energy_data[k]
 					}
 				}
-				plug.label_extended = ko.observable(tooltip);
-
-				if (plug.currentState != data.currentState) {
-					plug.currentState(data.currentState)
-					switch(data.currentState) {
-						case "on":
-							break;
-						case "off":
-							break;
-						default:
-							new PNotify({
-								title: 'Tasmota Error',
-								text: 'Status ' + plug.currentState() + ' for ' + plug.ip() + '. Double check IP Address\\Hostname in Tasmota Settings.',
-								type: 'error',
-								hide: true
-								});
-					}
-					self.settings.saveData();
+				//plug.label_extended = ko.observable(tooltip);
+                try {
+                    self.arrSmartplugsTooltips.set(data.ip+'_'+data.idx, tooltip);
+                } catch (error) {
+				    self.processing.remove(data.ip);
+				    console.log('tooltip', error);
+                }
+				try {
+                    self.arrSmartplugsStates.set(data.ip + '_' + data.idx, data.currentState);
+                }catch (error) {
+				    self.processing.remove(data.ip);
+				    console.log('currentState', error);
+                }
+				if (["on", "off"].indexOf(data.currentState) === -1) {
+                    new PNotify({
+                        title: 'Tasmota Error',
+                        text: 'Status ' + plug.currentState() + ' for ' + plug.ip() + '. Double check IP Address\\Hostname in Tasmota Settings.',
+                        type: 'error',
+                        hide: true
+                        });
 				}
 				self.processing.remove(data.ip);
 			}
@@ -345,7 +347,7 @@ $(function() {
 
 		self.toggleRelay = function(data) {
 			self.processing.push(data.ip());
-			switch(data.currentState()){
+			switch(self.arrSmartplugsStates.get(data.ip()+'_'+data.idx())()){
 				case "on":
 					self.turnOff(data);
 					break;
@@ -375,7 +377,10 @@ $(function() {
 					backlog_delay: data.backlog_on_delay()
 				}),
 				contentType: "application/json; charset=UTF-8"
-			});
+			}).done(function(data){
+			    console.log('on', data);
+			    self.onDataUpdaterPluginMessage('tasmota', data);
+            });
 		};
 
 		self.turnOff = function(data) {
@@ -386,7 +391,7 @@ $(function() {
 				$("#TasmotaWarning").modal("hide");
 				self.sendTurnOff(data);
 			}
-		}; 
+		};
 
 		self.sendTurnOff = function(data) {
 			$.ajax({
@@ -402,7 +407,10 @@ $(function() {
 					backlog_delay: data.backlog_off_delay()
 			}),
 			contentType: "application/json; charset=UTF-8"
-			});
+			}).done(function(data){
+			    console.log('off', data);
+			    self.onDataUpdaterPluginMessage('tasmota', data);
+            });
 		}
 
 		self.checkSetOption26 = function(data, evt) {
@@ -457,10 +465,11 @@ $(function() {
 					idx: data.idx()
 				}),
 				contentType: "application/json; charset=UTF-8"
-			}).done(function(){
-				self.settings.saveData();
-				});
-		}; 
+			}).done(function(data){
+			    console.log('checkStatus', data);
+			    self.onDataUpdaterPluginMessage('tasmota', data);
+            });
+		};
 
 		self.checkStatuses = function() {
 			ko.utils.arrayForEach(self.settings.settings.plugins.tasmota.arrSmartplugs(),function(item){
@@ -471,20 +480,6 @@ $(function() {
 					self.checkStatus(item);
 				}
 			});
-
-			// Moved to server side python
-/* 			if (self.settings.settings.plugins.tasmota.polling_enabled() && parseInt(self.settings.settings.plugins.tasmota.polling_interval(),10) > 0) {
-				if(self.settings.settings.plugins.tasmota.debug_logging()){
-					console.log('Polling enabled, checking status again in ' + (parseInt(self.settings.settings.plugins.tasmota.polling_interval(),10) * 60000) + '.');
-				}
-				if(typeof self.polling_timer !== "undefined") {
-					if(self.settings.settings.plugins.tasmota.debug_logging()){
-						console.log('Clearing polling timer.');
-					}
-					clearTimeout(self.polling_timer);
-				}
-				self.polling_timer = setTimeout(function() {self.checkStatuses();}, (parseInt(self.settings.settings.plugins.tasmota.polling_interval(),10) * 60000));
-			}; */
 		};
 	}
 
