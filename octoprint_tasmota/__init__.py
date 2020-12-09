@@ -356,6 +356,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 					"Resetting idle timer since plug %s:%s was just turned on." % (plugip, plugidx))
 				self._waitForHeaters = False
 				self._reset_idle_timer()
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
 
 	def turn_off(self, plugip, plugidx):
 		plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
@@ -372,25 +373,25 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				webresponse = requests.get(backlog_url)
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "OFF"
-
 			if plug["sysCmdOff"]:
 				self._tasmota_logger.debug(
 					"Running system command: %s in %s" % (plug["sysRunCmdOff"], plug["sysCmdOffDelay"]))
 				t = threading.Timer(int(plug["sysCmdOffDelay"]), os.system, args=[plug["sysRunCmdOff"]])
 				t.daemon = True
 				t.start()
-
 			if plug["autoDisconnect"] and self._printer.is_operational():
 				self._tasmota_logger.debug("Disconnnecting from printer")
 				self._printer.disconnect()
 				time.sleep(int(plug["autoDisconnectDelay"]))
-
 			if not plug["use_backlog"]:
 				self._tasmota_logger.debug("Not using backlog commands")
 				webresponse = requests.get(
 					"http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(
 						plug["password"]) + "&cmnd=Power" + str(plug["idx"]) + "%20off")
 				response = webresponse.json()
+			chk = response["POWER%s" % plug["idx"]]
+			if chk.upper() == "OFF":
+				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
 		except:
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plug["ip"], exc_info=True)
 			response = "Unknown error turning off %s index %s." % (plugip, plugidx)
