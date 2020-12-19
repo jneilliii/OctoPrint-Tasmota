@@ -455,12 +455,15 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, chk))
 			if chk.upper() == "ON":
-				return {"currentState": "on", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+				response = {"currentState": "on", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
 			elif chk.upper() == "OFF":
-				return {"currentState": "off", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+				response = {"currentState": "off", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
 			else:
 				self._tasmota_logger.debug(response)
-				return {"currentState": "unknown", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+				response = {"currentState": "unknown", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+
+			self._plugin_manager.send_plugin_message(self._identifier, response)
+			return response
 
 	def checkSetOption26(self, plugip, username, password):
 		webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(
