@@ -823,7 +823,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		# for details.
 		return dict(
 			tasmota=dict(
-				displayName="OctoPrint-Tasmota",
+				displayName="Tasmota",
 				displayVersion=self._plugin_version,
 
 				# version check: github repository
