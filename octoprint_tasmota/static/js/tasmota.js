@@ -274,7 +274,7 @@ $(function() {
 		}
 
 		self.onDataUpdaterPluginMessage = function(plugin, data) {
-			if (plugin != "tasmota") {
+			if (plugin != "tasmota" || !data) {
 				return;
 			}
 
@@ -378,10 +378,7 @@ $(function() {
 					backlog_delay: data.backlog_on_delay()
 				}),
 				contentType: "application/json; charset=UTF-8"
-			}).done(function(data){
-			    console.log('on', data);
-			    self.onDataUpdaterPluginMessage('tasmota', data);
-            });
+			});
 		};
 
 		self.turnOff = function(data) {
@@ -408,10 +405,7 @@ $(function() {
 					backlog_delay: data.backlog_off_delay()
 			}),
 			contentType: "application/json; charset=UTF-8"
-			}).done(function(data){
-			    console.log('off', data);
-			    self.onDataUpdaterPluginMessage('tasmota', data);
-            });
+			});
 		}
 
 		self.checkSetOption26 = function(data, evt) {
@@ -466,10 +460,7 @@ $(function() {
 					idx: data.idx()
 				}),
 				contentType: "application/json; charset=UTF-8"
-			}).done(function(data){
-			    console.log('checkStatus', data);
-			    self.onDataUpdaterPluginMessage('tasmota', data);
-            });
+			});
 		};
 
 		self.checkStatuses = function() {
