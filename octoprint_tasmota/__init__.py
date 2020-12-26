@@ -91,6 +91,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._skipIdleTimer = False
 		self.powerOffWhenIdle = False
 		self._idleTimer = None
+		self._autostart_file = None
 
 	##~~ StartupPlugin mixin
 
@@ -164,7 +165,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			powerOffWhenIdle=False,
 			idleTimeout=30,
 			idleIgnoreCommands='M105',
-			idleTimeoutWaitTemp=50
+			idleTimeoutWaitTemp=50,
+			event_on_upload_monitoring=False
 		)
 
 	def on_settings_save(self, data):
@@ -217,7 +219,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.poll_status.start()
 
 	def get_settings_version(self):
-		return 8
+		return 9
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < 6:
@@ -237,6 +239,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			for plug in self._settings.get(['arrSmartplugs']):
 				plug["event_on_error"] = False
 				plug["event_on_disconnect"] = False
+				arrSmartplugs_new.append(plug)
+			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
+		if current < 9:
+			# Add new fields
+			arrSmartplugs_new = []
+			for plug in self._settings.get(['arrSmartplugs']):
+				plug["event_on_upload"] = False
 				arrSmartplugs_new.append(plug)
 			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
 
@@ -294,6 +303,31 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
 														  timeout_value=self._timeout_value))
 			return
+		# Printer Connected Event
+		if event == Events.CONNECTED:
+			if self._autostart_file:
+				self._tasmota_logger.debug("printer connected starting print of %s" % self._autostart_file)
+				self._printer.select_file(self._autostart_file, False, printAfterSelect=True)
+				self._autostart_file = None
+		# File Uploaded Event
+		if event == Events.UPLOAD and self._settings.getBoolean(["event_on_upload_monitoring"]):
+			if payload.get("print", False):  # implemented in OctoPrint version 1.4.1
+				self._tasmota_logger.debug(
+					"File uploaded: %s. Turning enabled plugs on." % payload.get("name", ""))
+				self._tasmota_logger.debug(payload)
+				for plug in self._settings.get(['arrSmartplugs']):
+					self._tasmota_logger.debug(plug)
+					if plug["event_on_upload"] is True and not self._printer.is_ready():
+						self._tasmota_logger.debug("powering on %s due to %s event." % (plug["ip"], event))
+						self.turn_on(plug["ip"], plug["idx"])
+						response = self.check_status(plug["ip"], plug["idx"])
+						if response["currentState"] == "on":
+							self._tasmota_logger.debug(
+								"power on successful for %s attempting connection in %s seconds" % (
+									plug["ip"], plug.get("autoConnectDelay", "0")))
+							if payload.get("path", False) and payload.get("target") == "local":
+								self._autostart_file = payload.get("path")
+
 		# Print Started Event
 		if event == Events.PRINT_STARTED and self.powerOffWhenIdle == True:
 			if self._abort_timer is not None:

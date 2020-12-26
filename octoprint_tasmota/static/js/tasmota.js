@@ -254,7 +254,8 @@ $(function() {
 							   'thermal_runaway':ko.observable(false),
 							   'automaticShutdownEnabled':ko.observable(false),
 							   'event_on_error':ko.observable(false),
-							   'event_on_disconnect':ko.observable(false)});
+							   'event_on_disconnect':ko.observable(false),
+							   'event_on_upload':ko.observable(false)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}
