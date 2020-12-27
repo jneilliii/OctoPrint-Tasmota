@@ -87,6 +87,15 @@
 			<div class="control-group">
 				<div class="controls">
 					<label class="checkbox">
+					<input type="checkbox" title="{{ _('When enabled auto power on enabled devices when file is uploaded to OctoPrint with the option to automatically start printing.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_upload_monitoring, tooltip: {}" /> {{ _('Upload Event Monitoring') }}
+					</label>
+				</div>
+			</div>
+		</div>
+		<div class="row-fluid">
+			<div class="control-group">
+				<div class="controls">
+					<label class="checkbox">
 					<input type="checkbox" title="{{ _('When enabled the status of relays will be checked based on the Polling Interval supplied.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.polling_enabled, tooltip: {}" /> {{ _('Enable polling of status.') }}
 					</label>
 				</div>
@@ -191,8 +200,8 @@
 				<td><div class="controls"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /><div></td>
 			</tr>
 			<tr>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_upload, enable: $root.settings.settings.plugins.tasmota.event_on_upload_monitoring()" title="Automatically power on when file is uploaded." /> On with Upload</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: automaticShutdownEnabled, enable: $root.settings.settings.plugins.tasmota.powerOffWhenIdle()" title="Automatically power off when printer is idle." /> Off on Idle</label></div></td>
-				<td></td>
 				<td></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway" title="Power off if temperature exceeds configured max temperatures." /> Thermal Runaway</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" title="{{ _('Automatically power off this relay when Error Event Monitoring is enabled.') }}" data-toggle="tooltip" data-bind="checked: event_on_error, enable: $root.settings.settings.plugins.tasmota.event_on_error_monitoring(), tooltip: {}" disabled /> {{ _('Off on Error') }}</label></div></td>

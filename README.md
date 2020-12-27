@@ -6,8 +6,6 @@ This plugin is to control ITead Sonoff devices that have been flashed with [Sono
 
 **Single relay devices need to use 1 for index.**
 
-[Changelog](changelog.md)
-
 ##  Screenshots
 ![screenshot](screenshot.png)
 
@@ -62,6 +60,13 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
 - **Pi Safe Shutdown**
   ![Pi Safe Shutdown](tasmota_editor_safe_shutdown.png)
   With these options the raspberry pi will be shutdown 5 seconds after the idle timeout is reached (as configured on the main settings page) and send a backlog command to your Tasmota device to power off after a 60 second delay.
+
+## Most recent changelog
+**[0.8.17](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/0.8.17)** (12/26/2020)
+- fix issue introduced in 0.8.16 that broke functionality in OctoPod
+- add upload event monitoring that will auto power on enabled devices when sending files from PrusaSlicer/SuperSlicer
+
+### [All releases](https://github.com/jneilliii/OctoPrint-Tasmota/releases)
 
 ## Get Help
 
