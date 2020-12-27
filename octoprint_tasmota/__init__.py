@@ -535,6 +535,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		elif command == 'turnOff':
 			self.turn_off("{ip}".format(**data), "{idx}".format(**data))
 			# return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
+
 		elif command == 'checkStatus':
 			return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
 		elif command == 'checkSetOption26':
