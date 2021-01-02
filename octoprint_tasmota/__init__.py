@@ -442,9 +442,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			try:
 				plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
 				self._tasmota_logger.debug(plug)
-				webresponse = requests.get(
-					"http://" + plugip + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(
-						plug["password"]) + "&cmnd=Status%200")
+				webresponse = requests.get("http://" + plugip + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(plug["password"]) + "&cmnd=Status%200")
+				self._tasmota_logger.debug("check status code: {}".format(webresponse.status_code))
+				self._tasmota_logger.debug("check status text: {}".format(webresponse.text))
 				response = webresponse.json()
 				self._tasmota_logger.debug("%s index %s response: %s" % (plugip, plugidx, response))
 				# chk = response["POWER%s" % plugidx]
