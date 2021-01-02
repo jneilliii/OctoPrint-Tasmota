@@ -91,6 +91,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self._skipIdleTimer = False
 		self.powerOffWhenIdle = False
 		self._idleTimer = None
+		self._autostart_file = None
 
 	##~~ StartupPlugin mixin
 
@@ -164,7 +165,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			powerOffWhenIdle=False,
 			idleTimeout=30,
 			idleIgnoreCommands='M105',
-			idleTimeoutWaitTemp=50
+			idleTimeoutWaitTemp=50,
+			event_on_upload_monitoring=False
 		)
 
 	def on_settings_save(self, data):
@@ -217,7 +219,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.poll_status.start()
 
 	def get_settings_version(self):
-		return 8
+		return 9
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < 6:
@@ -237,6 +239,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			for plug in self._settings.get(['arrSmartplugs']):
 				plug["event_on_error"] = False
 				plug["event_on_disconnect"] = False
+				arrSmartplugs_new.append(plug)
+			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
+		if current < 9:
+			# Add new fields
+			arrSmartplugs_new = []
+			for plug in self._settings.get(['arrSmartplugs']):
+				plug["event_on_upload"] = False
 				arrSmartplugs_new.append(plug)
 			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
 
@@ -294,6 +303,31 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
 														  timeout_value=self._timeout_value))
 			return
+		# Printer Connected Event
+		if event == Events.CONNECTED:
+			if self._autostart_file:
+				self._tasmota_logger.debug("printer connected starting print of %s" % self._autostart_file)
+				self._printer.select_file(self._autostart_file, False, printAfterSelect=True)
+				self._autostart_file = None
+		# File Uploaded Event
+		if event == Events.UPLOAD and self._settings.getBoolean(["event_on_upload_monitoring"]):
+			if payload.get("print", False):  # implemented in OctoPrint version 1.4.1
+				self._tasmota_logger.debug(
+					"File uploaded: %s. Turning enabled plugs on." % payload.get("name", ""))
+				self._tasmota_logger.debug(payload)
+				for plug in self._settings.get(['arrSmartplugs']):
+					self._tasmota_logger.debug(plug)
+					if plug["event_on_upload"] is True and not self._printer.is_ready():
+						self._tasmota_logger.debug("powering on %s due to %s event." % (plug["ip"], event))
+						self.turn_on(plug["ip"], plug["idx"])
+						response = self.check_status(plug["ip"], plug["idx"])
+						if response["currentState"] == "on":
+							self._tasmota_logger.debug(
+								"power on successful for %s attempting connection in %s seconds" % (
+									plug["ip"], plug.get("autoConnectDelay", "0")))
+							if payload.get("path", False) and payload.get("target") == "local":
+								self._autostart_file = payload.get("path")
+
 		# Print Started Event
 		if event == Events.PRINT_STARTED and self.powerOffWhenIdle == True:
 			if self._abort_timer is not None:
@@ -356,6 +390,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 					"Resetting idle timer since plug %s:%s was just turned on." % (plugip, plugidx))
 				self._waitForHeaters = False
 				self._reset_idle_timer()
+			self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on",ip=plugip,idx=plugidx))
 
 	def turn_off(self, plugip, plugidx):
 		plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
@@ -372,25 +407,25 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				webresponse = requests.get(backlog_url)
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "OFF"
-
 			if plug["sysCmdOff"]:
 				self._tasmota_logger.debug(
 					"Running system command: %s in %s" % (plug["sysRunCmdOff"], plug["sysCmdOffDelay"]))
 				t = threading.Timer(int(plug["sysCmdOffDelay"]), os.system, args=[plug["sysRunCmdOff"]])
 				t.daemon = True
 				t.start()
-
 			if plug["autoDisconnect"] and self._printer.is_operational():
 				self._tasmota_logger.debug("Disconnnecting from printer")
 				self._printer.disconnect()
 				time.sleep(int(plug["autoDisconnectDelay"]))
-
 			if not plug["use_backlog"]:
 				self._tasmota_logger.debug("Not using backlog commands")
 				webresponse = requests.get(
 					"http://" + plug["ip"] + "/cm?user=" + plug["username"] + "&password=" + requests.utils.quote(
 						plug["password"]) + "&cmnd=Power" + str(plug["idx"]) + "%20off")
 				response = webresponse.json()
+			chk = response["POWER%s" % plug["idx"]]
+			if chk.upper() == "OFF":
+				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
 		except:
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plug["ip"], exc_info=True)
 			response = "Unknown error turning off %s index %s." % (plugip, plugidx)
@@ -454,12 +489,15 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, chk))
 			if chk.upper() == "ON":
-				return {"currentState": "on", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+				response = {"currentState": "on", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
 			elif chk.upper() == "OFF":
-				return {"currentState": "off", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+				response = {"currentState": "off", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
 			else:
 				self._tasmota_logger.debug(response)
-				return {"currentState": "unknown", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+				response = {"currentState": "unknown", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
+
+			self._plugin_manager.send_plugin_message(self._identifier, response)
+			return response
 
 	def checkSetOption26(self, plugip, username, password):
 		webresponse = requests.get("http://" + plugip + "/cm?user=" + username + "&password=" + requests.utils.quote(
@@ -493,10 +531,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		if command == 'turnOn':
 			self.turn_on("{ip}".format(**data), "{idx}".format(**data))
-			return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
+			# return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
 		elif command == 'turnOff':
 			self.turn_off("{ip}".format(**data), "{idx}".format(**data))
-			return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
+			# return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
+
 		elif command == 'checkStatus':
 			return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
 		elif command == 'checkSetOption26':
@@ -819,7 +858,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		# for details.
 		return dict(
 			tasmota=dict(
-				displayName="OctoPrint-Tasmota",
+				displayName="Tasmota",
 				displayVersion=self._plugin_version,
 
 				# version check: github repository
