@@ -384,7 +384,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if plug["autoConnect"] and self._printer.is_closed_or_error():
 				self._logger.info(self._settings.global_get(['serial']))
 				c = threading.Timer(int(plug["autoConnectDelay"]), self._printer.connect,
-									kwargs=dict(port=self._settings.global_get(['serial', 'port'])))
+									kwargs=dict(port=self._settings.global_get(['serial', 'port']), baudrate=self._settings.global_get(['serial', 'baudrate'])))
 				c.daemon = True
 				c.start()
 			if plug["sysCmdOn"]:
