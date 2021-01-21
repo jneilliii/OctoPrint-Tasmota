@@ -340,6 +340,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._plugin_manager.send_plugin_message(self._identifier,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
 														  timeout_value=self._timeout_value))
+
+		# Print Complete Event
+		if event in [Events.PRINT_CANCELLED, Events.PRINT_DONE]:
+			self._autostart_file = None
+
+		# Timelapse events
 		if self.powerOffWhenIdle == True and event == Events.MOVIE_RENDERING:
 			self._tasmota_logger.debug("Timelapse generation started: %s" % payload.get("movie_basename", ""))
 			self._timelapse_active = True
@@ -853,9 +859,6 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ Softwareupdate hook
 
 	def get_update_information(self):
-		# Define the configuration for your plugin to use with the Software Update
-		# Plugin here. See https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update
-		# for details.
 		return dict(
 			tasmota=dict(
 				displayName="Tasmota",
@@ -883,9 +886,6 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		)
 
 
-# If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
-# ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
-# can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
 __plugin_name__ = "Tasmota"
 __plugin_pythoncompat__ = ">=2.7,<4"
 
