@@ -23,10 +23,8 @@ $(function() {
 							switch(self.arrSmartplugsStates.get(data.ip()+'_'+data.idx())()) {
 								case "on":
 									return data.on_color();
-									break;
 								case "off":
 									return data.off_color();
-									break;
 								default:
 									return data.unknown_color();
 							}
