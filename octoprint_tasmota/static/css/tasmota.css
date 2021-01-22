@@ -27,8 +27,6 @@
 }
 
 #settings_plugin_tasmota > table > thead > tr > th, #settings_plugin_tasmota > table > tbody > tr > td {
-	border-bottom-width: 1px;
-	border-top-width: 1px;
 	border-bottom: 1px solid #ddd;
 	border-top: 1px solid #ddd;
 }
