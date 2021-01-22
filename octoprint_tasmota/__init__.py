@@ -341,7 +341,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
 														  timeout_value=self._timeout_value))
 
-		# Print Complete Event
+		# Print Cancelled/Done Events
 		if event in [Events.PRINT_CANCELLED, Events.PRINT_DONE]:
 			self._autostart_file = None
 
