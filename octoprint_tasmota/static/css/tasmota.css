@@ -68,3 +68,9 @@
   height: 25px;
   font-size: 12px;
 }
+
+input[type="datetime-local"].alert-error {
+    color: #b94a48;
+    background-color: #f2dede;
+    border-color: #b94a48;
+}

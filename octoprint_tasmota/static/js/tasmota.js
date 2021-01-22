@@ -156,8 +156,8 @@ $(function() {
 			dataType: "json",
 			data: JSON.stringify({
 				command: "getEnergyData",
-				start_date: self.graph_start_date(),
-				end_date: self.graph_end_date()
+				start_date: self.graph_start_date().replace('T', ' '),
+				end_date: self.graph_end_date().replace('T', ' ')
 			}),
 			contentType: "application/json; charset=UTF-8"
 			}).done(function(data){

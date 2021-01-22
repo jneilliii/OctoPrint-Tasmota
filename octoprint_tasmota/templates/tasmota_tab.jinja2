@@ -8,19 +8,19 @@
 	<div class="span5">
 		<label class="control-label">{{ _('Start') }}</label>
 		<div class="controls" style="position: relative">
-			<input type="datetime-local" class="input-block-level" data-bind="textInput: graph_start_date"/>
+			<input type="datetime-local" class="input-block-level" data-bind="textInput: graph_start_date, css: {'alert-error': graph_start_date() >= graph_end_date()}"/>
 		</div>
 	</div>
 	<div class="span5">
 		<label class="control-label">{{ _('End') }}</label>
 		<div class="controls" style="position: relative">
-			<input type="datetime-local" class="input-block-level" data-bind="textInput: graph_end_date"/>
+			<input type="datetime-local" class="input-block-level" data-bind="textInput: graph_end_date, css: {'alert-error': graph_end_date() <= graph_start_date()}"/>
 		</div>
 	</div>
 	<div class="span2">
 		<div class="controls">
 			<label class="control-label">&nbsp;</label>
-			<button class="btn btn-primary" data-bind="click: plotEnergyData">Update</button>
+			<button class="btn btn-primary" data-bind="click: plotEnergyData, disable: graph_end_date() <= graph_start_date()">Update</button>
 		</div>
 	</div>
 </div>
