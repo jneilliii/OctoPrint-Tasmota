@@ -9,7 +9,7 @@
 #navbar_plugin_tasmota > a > i.unknown::after {
 	content: " ?";
 	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-}	}
+}
 
 /* TouchUI - Show Label */
 #touch #navbar_plugin_tasmota > a > div.tasmota_label {
