@@ -132,7 +132,7 @@ $(function() {
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
 		}
 
-		self.onAfterBinding = function() {
+		self.onAllBound = function() {
 			self.checkStatuses();
 		}
 
