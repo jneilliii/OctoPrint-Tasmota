@@ -77,6 +77,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 					octoprint.plugin.EventHandlerPlugin):
 
 	def __init__(self):
+		self.print_job_power = 0.0
 		self._logger = logging.getLogger("octoprint.plugins.tasmota")
 		self._tasmota_logger = logging.getLogger("octoprint.plugins.tasmota.debug")
 		self.thermal_runaway_triggered = False
@@ -92,6 +93,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		self.powerOffWhenIdle = False
 		self._idleTimer = None
 		self._autostart_file = None
+		self.print_job_started = False
+		self._storage_interface = None
 
 	##~~ StartupPlugin mixin
 
@@ -166,7 +169,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			idleTimeout=30,
 			idleIgnoreCommands='M105',
 			idleTimeoutWaitTemp=50,
-			event_on_upload_monitoring=False
+			event_on_upload_monitoring=False,
+			cost_rate=0
 		)
 
 	def on_settings_save(self, data):
@@ -290,6 +294,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				if plug["event_on_error"] == True:
 					self._tasmota_logger.debug("powering off %s:%s due to %s event." % (plug["ip"], plug["idx"], event))
 					self.turn_off(plug["ip"], plug["idx"])
+
 		# Disconnected Event
 		if event == Events.DISCONNECTED and self._settings.get_boolean(["event_on_disconnect_monitoring"]):
 			self._tasmota_logger.debug("powering off due to %s event." % event)
@@ -297,18 +302,21 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				if plug["event_on_disconnect"] == True:
 					self._tasmota_logger.debug("powering off %s:%s due to %s event." % (plug["ip"], plug["idx"], event))
 					self.turn_off(plug["ip"], plug["idx"])
+
 		# Client Opened Event
 		if event == Events.CLIENT_OPENED:
 			self._plugin_manager.send_plugin_message(self._identifier,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
 														  timeout_value=self._timeout_value))
 			return
+
 		# Printer Connected Event
 		if event == Events.CONNECTED:
 			if self._autostart_file:
 				self._tasmota_logger.debug("printer connected starting print of %s" % self._autostart_file)
 				self._printer.select_file(self._autostart_file, False, printAfterSelect=True)
 				self._autostart_file = None
+
 		# File Uploaded Event
 		if event == Events.UPLOAD and self._settings.getBoolean(["event_on_upload_monitoring"]):
 			if payload.get("print", False):  # implemented in OctoPrint version 1.4.1
@@ -329,7 +337,15 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 								self._autostart_file = payload.get("path")
 
 		# Print Started Event
-		if event == Events.PRINT_STARTED and self.powerOffWhenIdle == True:
+		if event == Events.PRINT_STARTED and self._settings.getFloat(["cost_rate"]) > 0:
+			self.print_job_started = True
+			self._tasmota_logger.debug(payload.get("path", None))
+			for plug in self._settings.get(["arrSmartplugs"]):
+				status = self.check_status(plug["ip"], plug["idx"])
+				self.print_job_power -= float(self.deep_get(status, ["energy_data", "Total"], default=0))
+				self._tasmota_logger.debug(self.print_job_power)
+
+		if event == Events.PRINT_STARTED and self.powerOffWhenIdle:
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
 				self._abort_timer = None
@@ -337,13 +353,36 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if self._idleTimer is not None:
 				self._reset_idle_timer()
 			self._timeout_value = None
-			self._plugin_manager.send_plugin_message(self._identifier,
-													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
-														  timeout_value=self._timeout_value))
+			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
 
 		# Print Cancelled/Done Events
-		if event in [Events.PRINT_CANCELLED, Events.PRINT_DONE]:
+		if event == Events.PRINT_DONE and self.print_job_started:
+			self._tasmota_logger.debug(payload)
+
+			for plug in self._settings.get(["arrSmartplugs"]):
+				status = self.check_status(plug["ip"], plug["idx"])
+				self.print_job_power += float(self.deep_get(status, ["energy_data", "Total"], default=0))
+				self._tasmota_logger.debug(self.print_job_power)
+
+			hours = (payload.get("time", 0) / 60) / 60
+			self._tasmota_logger.debug("hours: %s" % hours)
+			power_used = self.print_job_power * hours
+			self._tasmota_logger.debug("power used: %s" % power_used)
+			power_cost = power_used * self._settings.getFloat(["cost_rate"])
+			self._tasmota_logger.debug("power total cost: %s" % power_cost)
+
+			self._storage_interface = self._file_manager._storage(payload.get("origin", "local"))
+			self._storage_interface.set_additional_metadata(payload.get("path"), "statistics", dict(
+				lastPowerCost=dict(_default=float('{:.4f}'.format(power_cost)))), merge=True)
+
 			self._autostart_file = None
+			self.print_job_power = 0.0
+			self.print_job_started = False
+
+		if event == Events.PRINT_CANCELLED:
+			self._autostart_file = None
+			self.print_job_power = 0.0
+			self.print_job_started = False
 
 		# Timelapse events
 		if self.powerOffWhenIdle == True and event == Events.MOVIE_RENDERING:
@@ -831,6 +870,21 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		for item in list:
 			if item[key1] == value1 and item[key2] == value2:
 				return item
+
+	def deep_get(self, d, keys, default=None):
+		"""
+		Example:
+			d = {'meta': {'status': 'OK', 'status_code': 200}}
+			deep_get(d, ['meta', 'status_code'])		  # => 200
+			deep_get(d, ['garbage', 'status_code'])	   # => None
+			deep_get(d, ['meta', 'garbage'], default='-') # => '-'
+		"""
+		assert type(keys) is list
+		if d is None:
+			return default
+		if not keys:
+			return d
+		return self.deep_get(d.get(keys[0]), keys[1:], default)
 
 	##~~ Access Permissions Hook
 

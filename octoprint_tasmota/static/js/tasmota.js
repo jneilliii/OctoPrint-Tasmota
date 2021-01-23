@@ -10,6 +10,7 @@ $(function() {
 
 		self.settings = parameters[0];
 		self.loginState = parameters[1];
+		self.filesViewModel = parameters[2];
 
 		self.arrSmartplugs = ko.observableArray();
 		self.arrSmartplugsTooltips = ko.observableDictionary({});
@@ -44,6 +45,40 @@ $(function() {
 		self.toggleShutdownTitle = ko.pureComputed(function() {
 			return self.automaticShutdownEnabled() ? 'Disable Automatic Power Off' : 'Enable Automatic Power Off';
 		})
+
+        self.filesViewModel.getAdditionalData = function(data) {
+			var output = "";
+			if (data["gcodeAnalysis"]) {
+				if (data["gcodeAnalysis"]["dimensions"]) {
+					var dimensions = data["gcodeAnalysis"]["dimensions"];
+					output += gettext("Model size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
+					output += "<br>";
+				}
+				if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) === "object") {
+					var filament = data["gcodeAnalysis"]["filament"];
+					if (_.keys(filament).length === 1) {
+						output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+					} else if (_.keys(filament).length > 1) {
+						_.each(filament, function(f, k) {
+							if (!_.startsWith(k, "tool") || !f || !f.hasOwnProperty("length") || f["length"] <= 0) return;
+							output += gettext("Filament") + " (" + gettext("Tool") + " " + k.substr("tool".length)
+								+ "): " + formatFilament(f) + "<br>";
+						});
+					}
+				}
+				output += gettext("Estimated print time") + ": " + (self.settings.appearance_fuzzyTimes() ? formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) : formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"])) + "<br>";
+			}
+			if (data["prints"] && data["prints"]["last"]) {
+				output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+				if (data["prints"]["last"]["printTime"]) {
+					output += gettext("Last print time") + ": " + formatDuration(data["prints"]["last"]["printTime"]) + "<br>";
+				}
+			}
+			if (data["statistics"] && data["statistics"]["lastPowerCost"]) {
+				output += gettext("Last power cost") + ": " + data["statistics"]["lastPowerCost"]["_default"] + "<br>";
+			}
+			return output;
+		};
 
 		// Hack to remove automatically added Cancel button
 		// See https://github.com/sciactive/pnotify/issues/141
@@ -167,10 +202,19 @@ $(function() {
 					for(var i=0;i<data.energy_data.length;i++){
 						for(var j=2;j<data.energy_data[i].length;j++){
 							var trace = {mode: 'lines'};
+							var trace_cost = {x:[],y:[],mode:'lines',name:data.energy_data[i][0] + ' Cost'};
 							trace['name'] = data.energy_data[i][0] + ' ' + energy_labels[j];
 							trace['x'] = data.energy_data[i][1].split(',');
 							trace['y'] = data.energy_data[i][j].split(',');
 							traces.push(trace);
+							if(j == 4){
+							    trace_cost['x'] = data.energy_data[i][1].split(',');
+							    var trace_cost_y = data.energy_data[i][j].split(',');
+							    for(var k=0;k<trace_cost_y.length;k++){
+							        trace_cost['y'].push((parseFloat(trace_cost_y[k]) * parseFloat(self.settings.settings.plugins.tasmota.cost_rate())));
+                                }
+							    traces.push(trace_cost);
+                            }
 						}
 					}
 					for(var i=0;i<data.sensor_data.length;i++){
@@ -482,7 +526,7 @@ $(function() {
 	// view model class, parameters for constructor, container to bind to
 	OCTOPRINT_VIEWMODELS.push([
 		tasmotaViewModel,
-		["settingsViewModel","loginStateViewModel"],
+		["settingsViewModel","loginStateViewModel","filesViewModel"],
 		["#navbar_plugin_tasmota","#settings_plugin_tasmota","#tab_plugin_tasmota","#sidebar_plugin_tasmota_wrapper"]
 	]);
 });

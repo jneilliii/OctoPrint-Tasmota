@@ -113,6 +113,14 @@
 			</div>
 		</div>
 		<div class="row-fluid">
+			<div class="control-group span6">
+				<label class="control-label">{{ _('Cost per kWh') }}</label>
+				<div class="controls">
+					<input type="number" title="{{ _('Amount used to multiply total kWh by to estimate power cost. Leave 0 if you do not have a power reporting device.') }}" data-toggle="tooltip" min="0" step="0.1" class="input input-mini" data-bind="value: settings.settings.plugins.tasmota.cost_rate" />
+				</div>
+			</div>
+		</div>
+		<div class="row-fluid">
 			<div class="control-group">
 				<div class="controls">
 					<label class="checkbox">
