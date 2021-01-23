@@ -297,7 +297,8 @@ $(function() {
 							   'automaticShutdownEnabled':ko.observable(false),
 							   'event_on_error':ko.observable(false),
 							   'event_on_disconnect':ko.observable(false),
-							   'event_on_upload':ko.observable(false)});
+							   'event_on_upload':ko.observable(false),
+							   'event_on_connecting':ko.observable(false)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}

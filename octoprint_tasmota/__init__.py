@@ -163,6 +163,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			thermal_runaway_max_extruder=300,
 			event_on_error_monitoring=False,
 			event_on_disconnect_monitoring=False,
+			event_on_connecting_monitoring=False,
 			arrSmartplugs=[],
 			abortTimeout=30,
 			powerOffWhenIdle=False,
@@ -223,7 +224,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.poll_status.start()
 
 	def get_settings_version(self):
-		return 9
+		return 10
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < 6:
@@ -250,6 +251,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			arrSmartplugs_new = []
 			for plug in self._settings.get(['arrSmartplugs']):
 				plug["event_on_upload"] = False
+				arrSmartplugs_new.append(plug)
+			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
+		if current < 10:
+			# Add new fields
+			arrSmartplugs_new = []
+			for plug in self._settings.get(['arrSmartplugs']):
+				plug["event_on_connecting"] = False
 				arrSmartplugs_new.append(plug)
 			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
 
@@ -294,6 +302,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				if plug["event_on_error"] == True:
 					self._tasmota_logger.debug("powering off %s:%s due to %s event." % (plug["ip"], plug["idx"], event))
 					self.turn_off(plug["ip"], plug["idx"])
+
+		if event == Events.CONNECTING and self._settings.get_boolean(["event_on_connecting_monitoring"]) and self._printer.is_closed_or_error:
+			self._tasmota_logger.debug("powering on due to %s event." % event)
+			for plug in self._settings.get(['arrSmartplugs']):
+				if plug["event_on_connecting"] == True:
+					self._tasmota_logger.debug("powering on %s:%s due to %s event." % (plug["ip"], plug["idx"], event))
+					self.turn_on(plug["ip"], plug["idx"])
 
 		# Disconnected Event
 		if event == Events.DISCONNECTED and self._settings.get_boolean(["event_on_disconnect_monitoring"]):

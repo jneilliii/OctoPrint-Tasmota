@@ -96,6 +96,15 @@
 			<div class="control-group">
 				<div class="controls">
 					<label class="checkbox">
+					<input type="checkbox" title="{{ _('When enabled auto power on enabled devices when the Connect button is pressed in OctoPrint.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_connecting_monitoring, tooltip: {}" /> {{ _('Connect Event Monitoring') }}
+					</label>
+				</div>
+			</div>
+		</div>
+		<div class="row-fluid">
+			<div class="control-group">
+				<div class="controls">
+					<label class="checkbox">
 					<input type="checkbox" title="{{ _('When enabled the status of relays will be checked based on the Polling Interval supplied.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.polling_enabled, tooltip: {}" /> {{ _('Enable polling of status.') }}
 					</label>
 				</div>
@@ -192,25 +201,25 @@
 	<div class="modal-body">
 		<table class="table table-condensed">
 			<tr>
-				<td><div class="control-group" data-bind="css: {error: ip().length == 0}"><div class="controls"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /><div></div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Index') }}</label><input type="number" min="1" class="input-block-level" data-bind="value: idx" /><div></td>
+				<td><div class="control-group" data-bind="css: {error: ip().length == 0}"><div class="controls"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /></div></div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Index') }}</label><input type="number" min="1" class="input-block-level" data-bind="value: idx" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Label') }}</label><input type="text" class="input input-small" data-bind="value: label" /></div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Username') }}</label><input type="text" class="input-block-level" data-bind="value: username" /><div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Username') }}</label><input type="text" class="input-block-level" data-bind="value: username" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Password') }}</label><input type="text" class="input input-small" data-bind="value: password" /></div></td>
 				<td style="text-align: center;vertical-align: middle;"><button class="btn" data-bind="click: $root.checkSetOption26, enable: ip().length > 0">Verify</button></td>
 			</tr>
 			<tr>
-				<td><div class="controls"><label class="control-label">{{ _('On Color') }}</label><input type="color" class="input input-small" data-bind="value: on_color" /><div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Off Color') }}</label><input type="color" class="input input-small" data-bind="value: off_color" /><div></td>
+				<td><div class="controls"><label class="control-label">{{ _('On Color') }}</label><input type="color" class="input input-small" data-bind="value: on_color" /></div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Off Color') }}</label><input type="color" class="input input-small" data-bind="value: off_color" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Unknown Color') }}</label><input type="color" class="input input-small" data-bind="value: unknown_color" /></div></td>
-				<td><div class="controls"><label class="control-label">{{ _('Icon Class') }}</label><input type="text" class="input-block-level" data-bind="value: icon, iconpicker: icon,iconpickerOptions: {hideOnSelect: true, collision: true}" /><div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Icon Class') }}</label><input type="text" class="input-block-level" data-bind="value: icon, iconpicker: icon,iconpickerOptions: {hideOnSelect: true, collision: true}" /></div></td>
 				<td></td>
-				<td><div class="controls"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /><div></td>
+				<td><div class="controls"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /></div></td>
 			</tr>
 			<tr>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_upload, enable: $root.settings.settings.plugins.tasmota.event_on_upload_monitoring()" title="Automatically power on when file is uploaded." /> On with Upload</label></div></td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_connecting, enabled: $root.settings.settings.plugins.tasmota.event_on_connecting_monitoring()" title="Automatically power on when pressing Connect button" /> On with Connect</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: automaticShutdownEnabled, enable: $root.settings.settings.plugins.tasmota.powerOffWhenIdle()" title="Automatically power off when printer is idle." /> Off on Idle</label></div></td>
-				<td></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway" title="Power off if temperature exceeds configured max temperatures." /> Thermal Runaway</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" title="{{ _('Automatically power off this relay when Error Event Monitoring is enabled.') }}" data-toggle="tooltip" data-bind="checked: event_on_error, enable: $root.settings.settings.plugins.tasmota.event_on_error_monitoring(), tooltip: {}" disabled /> {{ _('Off on Error') }}</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" title="{{ _('Automatically power off this relay when Disconnect Event Monitoring is enabled.') }}" data-toggle="tooltip" data-bind="checked: event_on_disconnect, enable: $root.settings.settings.plugins.tasmota.event_on_disconnect_monitoring(), tooltip: {}" disabled /> {{ _('Off on Disconnect') }}</label></div></td>
