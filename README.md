@@ -62,9 +62,19 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
   With these options the raspberry pi will be shutdown 5 seconds after the idle timeout is reached (as configured on the main settings page) and send a backlog command to your Tasmota device to power off after a 60 second delay.
 
 ## Most recent changelog
-**[0.8.17](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/0.8.17)** (12/26/2020)
-- fix issue introduced in 0.8.16 that broke functionality in OctoPod
-- add upload event monitoring that will auto power on enabled devices when sending files from PrusaSlicer/SuperSlicer
+**[1.0.0](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/1.0.0)** (01/24/2021)
+* jump to major version
+* add additional logging during check status, to aid in debugging
+* set _autostart_file None if print canceled or completed to prevent restarting file on connect
+* add baudrate to printer connection command
+* fix invalid state in confirmation prompt
+* switch to using params in requests.get
+* move check statuses to onAllBound to avoid potential lock up of UI load
+* fix date format for graphing data
+* add css error highlighting and disable update button on graph tab when inputs are invalid
+* remove redundant css properties
+* add cost to settings and graphing
+* add connect event monitoring
 
 ### [All releases](https://github.com/jneilliii/OctoPrint-Tasmota/releases)
 
@@ -86,6 +96,7 @@ Check out my other plugins [here](https://plugins.octoprint.org/by_author/#jneil
 - [SimplyPrint](https://simplyprint.dk/)
 - [Andrew Beeman](https://github.com/Kiendeleo)
 - [Calanish](https://github.com/calanish)
+- [Will O](https://github.com/4wrxb)
 
 ### Support My Efforts
 I, jneilliii, programmed this plugin for fun and do my best effort to support those that have issues with it, please return the favor and leave me a tip or become a Patron if you find this plugin helpful and want me to continue future development.
