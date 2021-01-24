@@ -218,7 +218,7 @@
 			</tr>
 			<tr>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_upload, enable: $root.settings.settings.plugins.tasmota.event_on_upload_monitoring()" title="Automatically power on when file is uploaded." /> On with Upload</label></div></td>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_connecting, enabled: $root.settings.settings.plugins.tasmota.event_on_connecting_monitoring()" title="Automatically power on when pressing Connect button" /> On with Connect</label></div></td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_connecting, enable: $root.settings.settings.plugins.tasmota.event_on_connecting_monitoring()" title="Automatically power on when pressing Connect button" /> On with Connect</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: automaticShutdownEnabled, enable: $root.settings.settings.plugins.tasmota.powerOffWhenIdle()" title="Automatically power off when printer is idle." /> Off on Idle</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway" title="Power off if temperature exceeds configured max temperatures." /> Thermal Runaway</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" title="{{ _('Automatically power off this relay when Error Event Monitoring is enabled.') }}" data-toggle="tooltip" data-bind="checked: event_on_error, enable: $root.settings.settings.plugins.tasmota.event_on_error_monitoring(), tooltip: {}" disabled /> {{ _('Off on Error') }}</label></div></td>
