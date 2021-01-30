@@ -360,6 +360,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.print_job_power -= float(self.deep_get(status, ["energy_data", "Total"], default=0))
 				self._tasmota_logger.debug(self.print_job_power)
 
+		if event == Events.PRINT_STARTED:
+			self._autostart_file = None
+
 		if event == Events.PRINT_STARTED and self.powerOffWhenIdle:
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
@@ -416,11 +419,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			if plug["use_backlog"] and int(plug["backlog_on_delay"]) > 0:
 				backlog_command = "backlog delay {};Power{} on;".format(int(plug["backlog_on_delay"]) * 10, plug["idx"])
-				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": requests.utils.quote(plug["password"]), "cmnd": backlog_command}, timeout=3)
+				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": backlog_command}, timeout=3)
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "ON"
 			else:
-				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": requests.utils.quote(plug["password"]), "cmnd": "Power{} on".format(plug["idx"])}, timeout=3)
+				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Power{} on".format(plug["idx"])}, timeout=3)
 				response = webresponse.json()
 			chk = response["POWER%s" % plug["idx"]]
 		except:
@@ -455,8 +458,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if plug["use_backlog"] and int(plug["backlog_off_delay"]) > 0:
 				self._tasmota_logger.debug(
 					"Using backlog commands with a delay value of %s" % str(int(plug["backlog_off_delay"]) * 10))
-				backlog_command = "backlog delay {};Power{} off;".format(int(plug["backlog_on_delay"]) * 10, plug["idx"])
-				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": requests.utils.quote(plug["password"]), "cmnd": backlog_command}, timeout=3)
+				backlog_command = "backlog delay {};Power{} off;".format(int(plug["backlog_off_delay"]) * 10, plug["idx"])
+				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": backlog_command}, timeout=3)
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "OFF"
 			if plug["sysCmdOff"]:
@@ -471,7 +474,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				time.sleep(int(plug["autoDisconnectDelay"]))
 			if not plug["use_backlog"]:
 				self._tasmota_logger.debug("Not using backlog commands")
-				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": requests.utils.quote(plug["password"]), "cmnd": "Power{} off".format(plug["idx"])}, timeout=3)
+				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Power{} off".format(plug["idx"])}, timeout=3)
 				response = webresponse.json()
 			chk = response["POWER%s" % plug["idx"]]
 			if chk.upper() == "OFF":
@@ -492,7 +495,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			try:
 				plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
 				self._tasmota_logger.debug(plug)
-				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": requests.utils.quote(plug["password"]), "cmnd": "Status 0"}, timeout=3)
+				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Status 0"}, timeout=3)
 				self._tasmota_logger.debug("check status code: {}".format(webresponse.status_code))
 				self._tasmota_logger.debug("check status text: {}".format(webresponse.text))
 				response = webresponse.json()
@@ -552,13 +555,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return response
 
 	def checkSetOption26(self, plugip, username, password):
-		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": requests.utils.quote(password), "cmnd": "SetOption26"}, timeout=3)
+		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": password, "cmnd": "SetOption26"}, timeout=3)
 		response = webresponse.json()
 		self._tasmota_logger.debug(response)
 		return response
 
 	def setSetOption26(self, plugip, username, password):
-		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": requests.utils.quote(password), "cmnd": "SetOption26 ON"}, timeout=3)
+		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": password, "cmnd": "SetOption26 ON"}, timeout=3)
 		response = webresponse.json()
 		self._tasmota_logger.debug(response)
 		return response
@@ -607,7 +610,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._timeout_value = None
 			for plug in self._settings.get(["arrSmartplugs"]):
 				if plug["use_backlog"] and int(plug["backlog_off_delay"]) > 0:
-					webresponse = requests.get("http://{}/cm".format(plug["ip"]), params={"user": plug["username"], "password": requests.utils.quote(plug["password"]), "cmnd": "backlog"}, timeout=3)
+					webresponse = requests.get("http://{}/cm".format(plug["ip"]), params={"user": plug["username"], "password": plug["password"], "cmnd": "backlog"}, timeout=3)
 					self._tasmota_logger.debug("Cleared countdown rules for %s" % plug["ip"])
 					self._tasmota_logger.debug(webresponse)
 			self._tasmota_logger.debug("Power off aborted.")
