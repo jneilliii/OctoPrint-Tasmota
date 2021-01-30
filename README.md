@@ -62,19 +62,10 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
   With these options the raspberry pi will be shutdown 5 seconds after the idle timeout is reached (as configured on the main settings page) and send a backlog command to your Tasmota device to power off after a 60 second delay.
 
 ## Most recent changelog
-**[1.0.0](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/1.0.0)** (01/24/2021)
-* jump to major version
-* add additional logging during check status, to aid in debugging
-* set _autostart_file None if print canceled or completed to prevent restarting file on connect
-* add baudrate to printer connection command
-* fix invalid state in confirmation prompt
-* switch to using params in requests.get
-* move check statuses to onAllBound to avoid potential lock up of UI load
-* fix date format for graphing data
-* add css error highlighting and disable update button on graph tab when inputs are invalid
-* remove redundant css properties
-* add cost to settings and graphing
-* add connect event monitoring
+**[1.0.1](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/1.0.1)** (01/30/2021)
+* fix regression related to special characters in passwords
+* clear _autostart_file on print start to avoid re-printing canceled print on connecting to printer
+* fix backlog off command using backlog on delay
 
 ### [All releases](https://github.com/jneilliii/OctoPrint-Tasmota/releases)
 
