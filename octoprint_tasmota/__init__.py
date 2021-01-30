@@ -360,6 +360,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.print_job_power -= float(self.deep_get(status, ["energy_data", "Total"], default=0))
 				self._tasmota_logger.debug(self.print_job_power)
 
+		if event == Events.PRINT_STARTED:
+			self._autostart_file = None
+
 		if event == Events.PRINT_STARTED and self.powerOffWhenIdle:
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
