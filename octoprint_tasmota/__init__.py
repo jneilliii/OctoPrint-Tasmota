@@ -455,7 +455,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if plug["use_backlog"] and int(plug["backlog_off_delay"]) > 0:
 				self._tasmota_logger.debug(
 					"Using backlog commands with a delay value of %s" % str(int(plug["backlog_off_delay"]) * 10))
-				backlog_command = "backlog delay {};Power{} off;".format(int(plug["backlog_on_delay"]) * 10, plug["idx"])
+				backlog_command = "backlog delay {};Power{} off;".format(int(plug["backlog_off_delay"]) * 10, plug["idx"])
 				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": backlog_command}, timeout=3)
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "OFF"
