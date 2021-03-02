@@ -8,7 +8,7 @@
     </div>
     <div class="modal-body">
         <p>
-            <!--ko text: ip()--><!--/ko--> is currently <!--ko text: $root.arrSmartplugsStates.get(ip()+'_'+idx())()--><!--/ko-->.
+            <!--ko text: label() + ' (' + ip() + ')'--><!--/ko--> is currently <!--ko text: $root.arrSmartplugsStates.get(ip()+'_'+idx())()--><!--/ko-->.
         </p>
         <p>
             {{ _('Are you sure you want to proceed?') }}
