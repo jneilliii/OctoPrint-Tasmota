@@ -13,6 +13,7 @@ import requests
 import threading
 import sqlite3
 import flask
+from uptime import uptime
 from datetime import datetime, timedelta
 
 try:
@@ -753,6 +754,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		if self._printer.is_printing() or self._printer.is_paused():
+			return
+
+		if (uptime() / 60) <= (self._settings.get_int(["idleTimeout"])):
+			self._tasmota_logger.debug("Just booted so wait for time sync.")
+			self._tasmota_logger.debug("uptime: {}, comparison: {}".format((uptime() / 60), (self._settings.get_int(["idleTimeout"]))))
+			self._reset_idle_timer()
 			return
 
 		self._tasmota_logger.debug(
