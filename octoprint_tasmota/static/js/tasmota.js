@@ -322,11 +322,32 @@ $(function() {
 			}
 
 			if(data.hasOwnProperty("thermal_runaway")){
-			    self.thermal_runaway_notice = new PNotify({
-                    title: "Tasmota Error",
-                    type: "error",
-                    text: "Thermal Runaway was triggered prior to the last printer connection."
-                });
+			    let message = "Thermal runaway was triggered "
+                switch (data.type){
+                    case "connection":
+                        message += "prior to the last printer connection.";
+                        break
+                    case "bed":
+                        message += "from the bed.";
+                        break
+                    case "extruder":
+                        message += "from the extruder.";
+                        break
+                    default:
+                        console.log("unknown thermal_runaway type");
+			    }
+
+			    if (self.thermal_runaway_notice !== undefined) {
+                    self.thermal_runaway_notice.update({text: message});
+                    self.thermal_runaway_notice.open();
+                } else {
+                    self.thermal_runaway_notice = new PNotify({
+                        title: "Tasmota Error",
+                        type: "error",
+                        text: message,
+                        hide: false
+                    });
+                }
 			    return;
             }
 

@@ -329,8 +329,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		# Printer Connected Event
 		if event == Events.CONNECTED:
 			if self.thermal_runaway_triggered:
-				self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="error", timeout_value=self._timeout_value))
-				self._tasmota_logger.debug("thermal runaway event triggered prior to last connection." % self._autostart_file)
+				self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="connection"))
+				self._tasmota_logger.debug("thermal runaway event triggered prior to last connection.")
 				self.thermal_runaway_triggered = False
 			if self._autostart_file:
 				self._tasmota_logger.debug("printer connected starting print of %s" % self._autostart_file)
@@ -360,6 +360,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if event == Events.PRINT_STARTED and self._settings.getFloat(["cost_rate"]) > 0:
 			self.print_job_started = True
 			self._tasmota_logger.debug(payload.get("path", None))
+			if self.thermal_runaway_triggered:
+				self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="connection"))
+				self._tasmota_logger.debug("thermal runaway event triggered prior to last connection.")
+				self.thermal_runaway_triggered = False
 			for plug in self._settings.get(["arrSmartplugs"]):
 				status = self.check_status(plug["ip"], plug["idx"])
 				self.print_job_power -= float(self.deep_get(status, ["energy_data", "Total"], default=0))
@@ -703,17 +707,23 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ Temperatures received hook
 
 	def check_temps(self, parsed_temps):
-		for k, v in parsed_temps.items():
-			if k == "B" and v[0] > int(self._settings.get(["thermal_runaway_max_bed"])):
-				self._tasmota_logger.debug("Max bed temp reached, shutting off plugs.")
-				self.thermal_runaway_triggered = True
-			if k.startswith("T") and v[0] > int(self._settings.get(["thermal_runaway_max_extruder"])):
-				self._tasmota_logger.debug("Extruder max temp reached, shutting off plugs.")
-				self.thermal_runaway_triggered = True
-			if self.thermal_runaway_triggered == True:
-				for plug in self._settings.get(['arrSmartplugs']):
-					if plug["thermal_runaway"] == True:
-						self.turn_off(plug["ip"], plug["idx"])
+		process_items = parsed_temps.items()
+		try:
+			for k, v in process_items:
+				if k == "B" and v[0] > int(self._settings.get(["thermal_runaway_max_bed"])):
+					self._tasmota_logger.debug("Max bed temp reached, shutting off plugs.")
+					self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="bed"))
+					self.thermal_runaway_triggered = True
+				if k.startswith("T") and v[0] > int(self._settings.get(["thermal_runaway_max_extruder"])):
+					self._tasmota_logger.debug("Extruder max temp reached, shutting off plugs.")
+					self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="extruder"))
+					self.thermal_runaway_triggered = True
+				if self.thermal_runaway_triggered == True:
+					for plug in self._settings.get(['arrSmartplugs']):
+						if plug["thermal_runaway"] == True:
+							self.turn_off(plug["ip"], plug["idx"])
+		except BaseException as e:
+			self._logger.debug(e)
 
 	def monitor_temperatures(self, comm, parsed_temps):
 		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered == False:
