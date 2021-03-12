@@ -328,6 +328,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		# Printer Connected Event
 		if event == Events.CONNECTED:
+			if self.thermal_runaway_triggered:
+				self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="error", timeout_value=self._timeout_value))
+				self._tasmota_logger.debug("thermal runaway event triggered prior to last connection." % self._autostart_file)
+				self.thermal_runaway_triggered = False
 			if self._autostart_file:
 				self._tasmota_logger.debug("printer connected starting print of %s" % self._autostart_file)
 				self._printer.select_file(self._autostart_file, False, printAfterSelect=True)

@@ -321,6 +321,15 @@ $(function() {
 				return;
 			}
 
+			if(data.hasOwnProperty("thermal_runaway")){
+			    self.thermal_runaway_notice = new PNotify({
+                    title: "Tasmota Error",
+                    type: "error",
+                    text: "Thermal Runaway was triggered prior to the last printer connection."
+                });
+			    return;
+            }
+
 			if(data.hasOwnProperty("powerOffWhenIdle")) {
 				self.settings.settings.plugins.tasmota.powerOffWhenIdle(data.powerOffWhenIdle);
 
