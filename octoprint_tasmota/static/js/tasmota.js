@@ -325,7 +325,7 @@ $(function() {
 			    let message = "Thermal runaway was triggered "
                 switch (data.type){
                     case "connection":
-                        message += "prior to the last printer connection.";
+                        message += "previously.";
                         break
                     case "bed":
                         message += "from the bed.";
@@ -334,7 +334,7 @@ $(function() {
                         message += "from the extruder.";
                         break
                     default:
-                        console.log("unknown thermal_runaway type");
+                        message = "Unknown thermal_runaway type.";
 			    }
 
 			    if (self.thermal_runaway_notice !== undefined) {
