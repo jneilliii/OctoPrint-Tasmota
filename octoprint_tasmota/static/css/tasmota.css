@@ -72,3 +72,8 @@ input[type="datetime-local"].alert-error {
     background-color: #f2dede;
     border-color: #b94a48;
 }
+
+#TasmotaEditor input[type=checkbox] {
+    margin-top: 0px;
+    vertical-align: baseline;
+}

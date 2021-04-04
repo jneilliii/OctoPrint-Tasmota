@@ -213,7 +213,7 @@
 				<td><div class="controls"><label class="control-label">{{ _('Off Color') }}</label><input type="color" class="input input-small" data-bind="value: off_color" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Unknown Color') }}</label><input type="color" class="input input-small" data-bind="value: unknown_color" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Icon Class') }}</label><input type="text" class="input-block-level" data-bind="value: icon, iconpicker: icon,iconpickerOptions: {hideOnSelect: true, collision: true}" /></div></td>
-				<td></td>
+				<td><div class="controls"><label class="control-label"><input type="checkbox" data-bind="checked: is_led" title="Is an LED or WS2812 type device connected." /> {{ _('LED') }}</label><div class="input-append"><input type="number" min="1" max="100" class="input-small" data-bind="value: brightness, visible: is_led" /><span class="add-on">%</span></div></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /></div></td>
 			</tr>
 			<tr>
@@ -221,8 +221,8 @@
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_connecting, enable: $root.settings.settings.plugins.tasmota.event_on_connecting_monitoring()" title="Automatically power on when pressing Connect button" /> On with Connect</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: automaticShutdownEnabled, enable: $root.settings.settings.plugins.tasmota.powerOffWhenIdle()" title="Automatically power off when printer is idle." /> Off on Idle</label></div></td>
 				<td><div class="controls"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway" title="Power off if temperature exceeds configured max temperatures." /> Thermal Runaway</label></div></td>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" title="{{ _('Automatically power off this relay when Error Event Monitoring is enabled.') }}" data-toggle="tooltip" data-bind="checked: event_on_error, enable: $root.settings.settings.plugins.tasmota.event_on_error_monitoring(), tooltip: {}" disabled /> {{ _('Off on Error') }}</label></div></td>
-				<td><div class="controls"><label class="checkbox"><input type="checkbox" title="{{ _('Automatically power off this relay when Disconnect Event Monitoring is enabled.') }}" data-toggle="tooltip" data-bind="checked: event_on_disconnect, enable: $root.settings.settings.plugins.tasmota.event_on_disconnect_monitoring(), tooltip: {}" disabled /> {{ _('Off on Disconnect') }}</label></div></td>
+				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power off this relay when Error Event Monitoring is enabled.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_error, enable: $root.settings.settings.plugins.tasmota.event_on_error_monitoring()" disabled /> {{ _('Off on Error') }}</label></div></td>
+				<td><div class="controls"><label class="checkbox"><input type="checkbox" title="{{ _('Automatically power off this relay when Disconnect Event Monitoring is enabled.') }}" data-toggle="tooltip" data-bind="checked: event_on_disconnect, enable: $root.settings.settings.plugins.tasmota.event_on_disconnect_monitoring(), tooltip: {container: '#TasmotaEditor'}" disabled /> {{ _('Off on Disconnect') }}</label></div></td>
 			</tr>
 			<tr>
 				<td>

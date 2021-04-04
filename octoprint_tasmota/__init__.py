@@ -225,7 +225,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.poll_status.start()
 
 	def get_settings_version(self):
-		return 10
+		return 11
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < 6:
@@ -259,6 +259,14 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			arrSmartplugs_new = []
 			for plug in self._settings.get(['arrSmartplugs']):
 				plug["event_on_connecting"] = False
+				arrSmartplugs_new.append(plug)
+			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
+		if current < 11:
+			# Add new fields
+			arrSmartplugs_new = []
+			for plug in self._settings.get(['arrSmartplugs']):
+				plug["is_led"] = False
+				plug["brightness"] = 50
 				arrSmartplugs_new.append(plug)
 			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
 
@@ -676,6 +684,18 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def gcode_on(self, plug):
 		self.turn_on(plug["ip"], plug["idx"])
 
+	def gcode_led(self, plugip, led_data):
+		self._tasmota_logger.debug("Received LED Command for {} with parameters {}".format(plugip, led_data))
+		for plug in self._settings.get(["arrSmartplugs"]):
+			if plug["is_led"]:
+				if led_data["LEDBrightness"] == -1:
+					led_data["LEDBrightness"] = plug["brightness"]
+				try:
+					requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "backlog dimmer {}; color2 {},{},{}; white {}; power{} on".format(led_data["LEDBrightness"], led_data["LEDRed"], led_data["LEDGreen"], led_data["LEDBlue"], led_data["LEDWhite"], plug["idx"])}, timeout=3)
+					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on", ip=plug["ip"], idx=plug["idx"], color=led_data))
+				except Exception as e:
+					self._logger.debug("Error: {}".format(e))
+
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode:
 			if gcode in ["M80", "M81"] and cmd.count(" ") >= 2:
@@ -699,6 +719,36 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							return
 						else:
 							return
+			elif gcode == "M150":
+				workleds = dict(LEDRed=0, LEDBlue=0, LEDGreen=0, LEDWhite=0, LEDBrightness=-1)
+				workval = cmd.upper().split()
+				for i in workval:
+					firstchar = str(i[0].upper())
+					leddata = str(i[1:].strip())
+					if not leddata.isdigit() and firstchar != 'I':
+						self._tasmota_logger.debug(leddata)
+						return
+
+					if firstchar == 'M':
+						continue
+					elif firstchar == "I":
+						plugip = leddata
+					elif firstchar == 'R':
+						workleds['LEDRed'] = int(leddata)
+					elif firstchar == 'G' or firstchar == 'U':
+						workleds['LEDGreen'] = int(leddata)
+					elif firstchar == 'B':
+						workleds['LEDBlue'] = int(leddata)
+					elif firstchar == "W":
+						workleds['LEDWhite'] = int(float(leddata)/255*100)
+					elif firstchar == "P":
+						workleds['LEDBrightness'] = int(float(leddata)/255*100)
+					else:
+						self._tasmota_logger.debug(leddata)
+
+				t = threading.Timer(0, self.gcode_led, [plugip, workleds])
+				t.daemon = True
+				t.start()
 			elif self.powerOffWhenIdle and not (gcode in self._idleIgnoreCommandsArray):
 				self._waitForHeaters = False
 				self._reset_idle_timer()
