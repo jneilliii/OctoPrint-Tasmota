@@ -15,6 +15,7 @@ $(function() {
 		self.arrSmartplugs = ko.observableArray();
 		self.arrSmartplugsTooltips = ko.observableDictionary({});
 		self.arrSmartplugsStates = ko.observableDictionary({});
+		self.arrSmartplugsLEDColors = ko.observableDictionary({});
 		self.isPrinting = ko.observable(false);
 		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
@@ -23,9 +24,9 @@ $(function() {
 		self.get_color = function(data){
 							switch(self.arrSmartplugsStates.get(data.ip()+'_'+data.idx())()) {
 								case "on":
-									return data.on_color();
+									return self.arrSmartplugsLEDColors.get(data.ip()+'_'+data.idx())() ? self.arrSmartplugsLEDColors.get(data.ip()+'_'+data.idx())() : data.on_color();
 								case "off":
-									return data.off_color();
+									return self.arrSmartplugsLEDColors.get(data.ip()+'_'+data.idx())() ? data.unknown_color() : data.off_color();
 								default:
 									return data.unknown_color();
 							}
@@ -321,6 +322,36 @@ $(function() {
 				return;
 			}
 
+			if(data.hasOwnProperty("thermal_runaway")){
+			    let message = "Thermal runaway was triggered "
+                switch (data.type){
+                    case "connection":
+                        message += "previously.";
+                        break
+                    case "bed":
+                        message += "from the bed.";
+                        break
+                    case "extruder":
+                        message += "from the extruder.";
+                        break
+                    default:
+                        message = "Unknown thermal_runaway type.";
+			    }
+
+			    if (self.thermal_runaway_notice !== undefined) {
+                    self.thermal_runaway_notice.update({text: message});
+                    self.thermal_runaway_notice.open();
+                } else {
+                    self.thermal_runaway_notice = new PNotify({
+                        title: "Tasmota Error",
+                        type: "error",
+                        text: message,
+                        hide: false
+                    });
+                }
+			    return;
+            }
+
 			if(data.hasOwnProperty("powerOffWhenIdle")) {
 				self.settings.settings.plugins.tasmota.powerOffWhenIdle(data.powerOffWhenIdle);
 
@@ -356,7 +387,7 @@ $(function() {
 				var tooltip = plug.label();
 				if(data.sensor_data) {
 					for(k in data.sensor_data) {
-						tooltip += '<br>' + k + ': ' + data.sensor_data[k]
+						tooltip += '<br>' + k + ': ' + data.sensor_data["k"]
 					}
 				}
 				if(data.energy_data) {
@@ -373,7 +404,7 @@ $(function() {
                 }
 				try {
                     self.arrSmartplugsStates.set(data.ip + '_' + data.idx, data.currentState);
-                }catch (error) {
+                } catch (error) {
 				    self.processing.remove(data.ip);
 				    console.log('currentState', error);
                 }
@@ -385,6 +416,10 @@ $(function() {
                         hide: true
                         });
 				}
+				if(data.color){
+				    var color = (data.color.LEDBrightness > 0) ? 'RGB(' + data.color.LEDRed + ',' + data.color.LEDGreen + ',' + data.color.LEDBlue + ')' : plug["unknown_color"];
+				    self.arrSmartplugsLEDColors.set(data.ip + '_' + data.idx, color);
+                }
 				self.processing.remove(data.ip);
 			}
 		};

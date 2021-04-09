@@ -13,6 +13,7 @@ import requests
 import threading
 import sqlite3
 import flask
+from uptime import uptime
 from datetime import datetime, timedelta
 
 try:
@@ -224,7 +225,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.poll_status.start()
 
 	def get_settings_version(self):
-		return 10
+		return 11
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None or current < 6:
@@ -258,6 +259,14 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			arrSmartplugs_new = []
 			for plug in self._settings.get(['arrSmartplugs']):
 				plug["event_on_connecting"] = False
+				arrSmartplugs_new.append(plug)
+			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
+		if current < 11:
+			# Add new fields
+			arrSmartplugs_new = []
+			for plug in self._settings.get(['arrSmartplugs']):
+				plug["is_led"] = False
+				plug["brightness"] = 50
 				arrSmartplugs_new.append(plug)
 			self._settings.set(["arrSmartplugs"], arrSmartplugs_new)
 
@@ -327,6 +336,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		# Printer Connected Event
 		if event == Events.CONNECTED:
+			if self.thermal_runaway_triggered:
+				self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="connection"))
+				self._tasmota_logger.debug("thermal runaway event triggered prior to last connection.")
+				self.thermal_runaway_triggered = False
 			if self._autostart_file:
 				self._tasmota_logger.debug("printer connected starting print of %s" % self._autostart_file)
 				self._printer.select_file(self._autostart_file, False, printAfterSelect=True)
@@ -355,6 +368,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if event == Events.PRINT_STARTED and self._settings.getFloat(["cost_rate"]) > 0:
 			self.print_job_started = True
 			self._tasmota_logger.debug(payload.get("path", None))
+			if self.thermal_runaway_triggered:
+				self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="connection"))
+				self._tasmota_logger.debug("thermal runaway event triggered prior to last connection.")
+				self.thermal_runaway_triggered = False
 			for plug in self._settings.get(["arrSmartplugs"]):
 				status = self.check_status(plug["ip"], plug["idx"])
 				self.print_job_power -= float(self.deep_get(status, ["energy_data", "Total"], default=0))
@@ -667,6 +684,18 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def gcode_on(self, plug):
 		self.turn_on(plug["ip"], plug["idx"])
 
+	def gcode_led(self, plugip, led_data):
+		self._tasmota_logger.debug("Received LED Command for {} with parameters {}".format(plugip, led_data))
+		for plug in self._settings.get(["arrSmartplugs"]):
+			if plug["is_led"]:
+				if led_data["LEDBrightness"] == -1:
+					led_data["LEDBrightness"] = plug["brightness"]
+				try:
+					requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "backlog dimmer {}; color2 {},{},{}; white {}; power{} on".format(led_data["LEDBrightness"], led_data["LEDRed"], led_data["LEDGreen"], led_data["LEDBlue"], led_data["LEDWhite"], plug["idx"])}, timeout=3)
+					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on", ip=plug["ip"], idx=plug["idx"], color=led_data))
+				except Exception as e:
+					self._logger.debug("Error: {}".format(e))
+
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode:
 			if gcode in ["M80", "M81"] and cmd.count(" ") >= 2:
@@ -690,6 +719,36 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							return
 						else:
 							return
+			elif gcode == "M150":
+				workleds = dict(LEDRed=0, LEDBlue=0, LEDGreen=0, LEDWhite=0, LEDBrightness=-1)
+				workval = cmd.upper().split()
+				for i in workval:
+					firstchar = str(i[0].upper())
+					leddata = str(i[1:].strip())
+					if not leddata.isdigit() and firstchar != 'I':
+						self._tasmota_logger.debug(leddata)
+						return
+
+					if firstchar == 'M':
+						continue
+					elif firstchar == "I":
+						plugip = leddata
+					elif firstchar == 'R':
+						workleds['LEDRed'] = int(leddata)
+					elif firstchar == 'G' or firstchar == 'U':
+						workleds['LEDGreen'] = int(leddata)
+					elif firstchar == 'B':
+						workleds['LEDBlue'] = int(leddata)
+					elif firstchar == "W":
+						workleds['LEDWhite'] = int(float(leddata)/255*100)
+					elif firstchar == "P":
+						workleds['LEDBrightness'] = int(float(leddata)/255*100)
+					else:
+						self._tasmota_logger.debug(leddata)
+
+				t = threading.Timer(0, self.gcode_led, [plugip, workleds])
+				t.daemon = True
+				t.start()
 			elif self.powerOffWhenIdle and not (gcode in self._idleIgnoreCommandsArray):
 				self._waitForHeaters = False
 				self._reset_idle_timer()
@@ -698,17 +757,23 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ Temperatures received hook
 
 	def check_temps(self, parsed_temps):
-		for k, v in parsed_temps.items():
-			if k == "B" and v[0] > int(self._settings.get(["thermal_runaway_max_bed"])):
-				self._tasmota_logger.debug("Max bed temp reached, shutting off plugs.")
-				self.thermal_runaway_triggered = True
-			if k.startswith("T") and v[0] > int(self._settings.get(["thermal_runaway_max_extruder"])):
-				self._tasmota_logger.debug("Extruder max temp reached, shutting off plugs.")
-				self.thermal_runaway_triggered = True
-			if self.thermal_runaway_triggered == True:
-				for plug in self._settings.get(['arrSmartplugs']):
-					if plug["thermal_runaway"] == True:
-						self.turn_off(plug["ip"], plug["idx"])
+		process_items = parsed_temps.items()
+		try:
+			for k, v in process_items:
+				if k == "B" and v[0] > int(self._settings.get(["thermal_runaway_max_bed"])):
+					self._tasmota_logger.debug("Max bed temp reached, shutting off plugs.")
+					self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="bed"))
+					self.thermal_runaway_triggered = True
+				if k.startswith("T") and v[0] > int(self._settings.get(["thermal_runaway_max_extruder"])):
+					self._tasmota_logger.debug("Extruder max temp reached, shutting off plugs.")
+					self._plugin_manager.send_plugin_message(self._identifier, dict(thermal_runaway=True, type="extruder"))
+					self.thermal_runaway_triggered = True
+				if self.thermal_runaway_triggered == True:
+					for plug in self._settings.get(['arrSmartplugs']):
+						if plug["thermal_runaway"] == True:
+							self.turn_off(plug["ip"], plug["idx"])
+		except BaseException as e:
+			self._logger.debug(e)
 
 	def monitor_temperatures(self, comm, parsed_temps):
 		if self._settings.get(["thermal_runaway_monitoring"]) and self.thermal_runaway_triggered == False:
@@ -753,6 +818,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return
 
 		if self._printer.is_printing() or self._printer.is_paused():
+			return
+
+		if (uptime() / 60) <= (self._settings.get_int(["idleTimeout"])):
+			self._tasmota_logger.debug("Just booted so wait for time sync.")
+			self._tasmota_logger.debug("uptime: {}, comparison: {}".format((uptime() / 60), (self._settings.get_int(["idleTimeout"]))))
+			self._reset_idle_timer()
 			return
 
 		self._tasmota_logger.debug(
