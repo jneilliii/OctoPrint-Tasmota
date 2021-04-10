@@ -299,7 +299,9 @@ $(function() {
 							   'event_on_error':ko.observable(false),
 							   'event_on_disconnect':ko.observable(false),
 							   'event_on_upload':ko.observable(false),
-							   'event_on_connecting':ko.observable(false)});
+							   'event_on_connecting':ko.observable(false),
+							   'is_led':ko.observable(false),
+                               'brightness':ko.observable(50)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
 		}

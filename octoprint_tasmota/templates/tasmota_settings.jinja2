@@ -213,7 +213,7 @@
 				<td><div class="controls"><label class="control-label">{{ _('Off Color') }}</label><input type="color" class="input input-small" data-bind="value: off_color" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Unknown Color') }}</label><input type="color" class="input input-small" data-bind="value: unknown_color" /></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Icon Class') }}</label><input type="text" class="input-block-level" data-bind="value: icon, iconpicker: icon,iconpickerOptions: {hideOnSelect: true, collision: true}" /></div></td>
-				<td><div class="controls"><label class="control-label"><input type="checkbox" data-bind="checked: is_led" title="Is an LED or WS2812 type device connected." /> {{ _('LED') }}</label><div class="input-append"><input type="number" min="1" max="100" class="input-small" data-bind="value: brightness, visible: is_led" /><span class="add-on">%</span></div></div></td>
+				<td><div class="controls"><label class="control-label"><input type="checkbox" data-bind="checked: is_led" title="Is an LED or WS2812 type device connected." /> {{ _('LED') }}</label><div class="input-append" data-bind="visible: is_led"><input type="number" min="1" max="100" class="input-small" data-bind="value: brightness" /><span class="add-on">%</span></div></div></td>
 				<td><div class="controls"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /></div></td>
 			</tr>
 			<tr>
