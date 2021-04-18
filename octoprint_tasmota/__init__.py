@@ -720,6 +720,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 						else:
 							return
 			elif gcode == "M150":
+				plugip = None
 				workleds = dict(LEDRed=0, LEDBlue=0, LEDGreen=0, LEDWhite=0, LEDBrightness=-1)
 				workval = cmd.upper().split()
 				for i in workval:
@@ -746,9 +747,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 					else:
 						self._tasmota_logger.debug(leddata)
 
-				t = threading.Timer(0, self.gcode_led, [plugip, workleds])
-				t.daemon = True
-				t.start()
+				if plugip is not None:
+					t = threading.Timer(0, self.gcode_led, [plugip, workleds])
+					t.daemon = True
+					t.start()
 			elif self.powerOffWhenIdle and not (gcode in self._idleIgnoreCommandsArray):
 				self._waitForHeaters = False
 				self._reset_idle_timer()
