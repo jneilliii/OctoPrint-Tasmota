@@ -697,6 +697,42 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				except Exception as e:
 					self._logger.debug("Error: {}".format(e))
 
+	def process_echo(self, comm, line, *args, **kwargs):
+		if not line.startswith("TASMOTA_M150"):
+			return line
+
+		plugip = None
+		workleds = dict(LEDRed=0, LEDBlue=0, LEDGreen=0, LEDWhite=0, LEDBrightness=-1)
+		workval = line.upper().split()
+		for i in workval:
+			firstchar = str(i[0].upper())
+			leddata = str(i[1:].strip())
+			if not leddata.isdigit() and firstchar not in ["I", "T"]:
+				self._tasmota_logger.debug(leddata)
+				return line
+
+			if firstchar == 'T':
+				continue
+			elif firstchar == "I":
+				plugip = leddata
+			elif firstchar == 'R':
+				workleds['LEDRed'] = int(leddata)
+			elif firstchar == 'G' or firstchar == 'U':
+				workleds['LEDGreen'] = int(leddata)
+			elif firstchar == 'B':
+				workleds['LEDBlue'] = int(leddata)
+			elif firstchar == "W":
+				workleds['LEDWhite'] = int(float(leddata) / 255 * 100)
+			elif firstchar == "P":
+				workleds['LEDBrightness'] = int(float(leddata) / 255 * 100)
+			else:
+				self._tasmota_logger.debug(leddata)
+
+		if plugip is not None:
+			t = threading.Timer(0, self.gcode_led, [plugip, workleds])
+			t.daemon = True
+			t.start()
+
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode:
 			if gcode in ["M80", "M81"] and cmd.count(" ") >= 2:
@@ -721,37 +757,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 						else:
 							return
 			elif gcode == "M150":
-				plugip = None
-				workleds = dict(LEDRed=0, LEDBlue=0, LEDGreen=0, LEDWhite=0, LEDBrightness=-1)
-				workval = cmd.upper().split()
-				for i in workval:
-					firstchar = str(i[0].upper())
-					leddata = str(i[1:].strip())
-					if not leddata.isdigit() and firstchar != 'I':
-						self._tasmota_logger.debug(leddata)
-						return
-
-					if firstchar == 'M':
-						continue
-					elif firstchar == "I":
-						plugip = leddata
-					elif firstchar == 'R':
-						workleds['LEDRed'] = int(leddata)
-					elif firstchar == 'G' or firstchar == 'U':
-						workleds['LEDGreen'] = int(leddata)
-					elif firstchar == 'B':
-						workleds['LEDBlue'] = int(leddata)
-					elif firstchar == "W":
-						workleds['LEDWhite'] = int(float(leddata)/255*100)
-					elif firstchar == "P":
-						workleds['LEDBrightness'] = int(float(leddata)/255*100)
-					else:
-						self._tasmota_logger.debug(leddata)
-
-				if plugip is not None:
-					t = threading.Timer(0, self.gcode_led, [plugip, workleds])
-					t.daemon = True
-					t.start()
+				self.process_echo(comm_instance, "TASMOTA_{}".format(cmd), *args, **kwargs)
 			elif self.powerOffWhenIdle and not (gcode in self._idleIgnoreCommandsArray):
 				self._waitForHeaters = False
 				self._reset_idle_timer()
@@ -1031,6 +1037,7 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.processGCODE,
+		"octoprint.comm.protocol.gcode.received": __plugin_implementation__.process_echo,
 		"octoprint.comm.protocol.temperatures.received": __plugin_implementation__.monitor_temperatures,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
