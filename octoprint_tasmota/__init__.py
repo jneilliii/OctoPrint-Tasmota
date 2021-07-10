@@ -526,10 +526,19 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				if energy_data is not None:
 					today = datetime.today()
 					c = self.lookup(response, *["StatusSNS", "ENERGY", "Current"])
+					if isinstance(c, list):
+						c = c[int(plugidx)-1]
 					p = self.lookup(response, *["StatusSNS", "ENERGY", "Power"])
+					if isinstance(p, list):
+						p = p[int(plugidx)-1]
 					t = self.lookup(response, *["StatusSNS", "ENERGY", "Total"])
+					if isinstance(t, list):
+						t = t[int(plugidx)-1]
 					v = self.lookup(response, *["StatusSNS", "ENERGY", "Voltage"])
+					if isinstance(v, list):
+						v = v[int(plugidx)-1]
 					self._tasmota_logger.debug("Energy Data: %s" % energy_data)
+					self._logger.debug("Inserting data: {} : {}".format(["ip", "idx", "timestamp", "current", "power", "total", "voltage"], [plugip, plugidx, today.isoformat(' '), c, p, t, v]))
 					db = sqlite3.connect(self.energy_db_path)
 					cursor = db.cursor()
 					cursor.execute(
