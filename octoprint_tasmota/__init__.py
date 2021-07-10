@@ -2,9 +2,9 @@
 from __future__ import absolute_import
 
 import octoprint.plugin
-from octoprint.access.permissions import Permissions, ADMIN_GROUP, USER_GROUP
+from octoprint.access.permissions import Permissions, ADMIN_GROUP
 from octoprint.util import RepeatedTimer
-from octoprint.events import eventManager, Events
+from octoprint.events import Events
 from flask_babel import gettext
 import time
 import logging
@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 try:
 	from octoprint.util import ResettableTimer
-except:
+except ImportError:
 	class ResettableTimer(threading.Thread):
 		def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
 			threading.Thread.__init__(self)
@@ -644,7 +644,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug("Restarting idle timer.")
 			self._reset_idle_timer()
 		elif command == 'getEnergyData':
-			self._logger.info(data);
+			self._logger.info(data)
 			response = {}
 			if "start_date" in data and data["start_date"] != "":
 				start_date = data["start_date"]
