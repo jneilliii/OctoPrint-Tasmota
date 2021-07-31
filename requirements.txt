@@ -7,3 +7,9 @@
 ###
 
 .
+
+setuptools
+OctoPrint
+requests
+Flask
+uptime

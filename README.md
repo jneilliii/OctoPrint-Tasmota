@@ -62,11 +62,12 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
   With these options the raspberry pi will be shutdown 5 seconds after the idle timeout is reached (as configured on the main settings page) and send a backlog command to your Tasmota device to power off after a 60 second delay.
 
 ## Most recent changelog
-**[1.0.2](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/1.0.0)** (04/09/2021)
-* add uptime library to resolve issues with idle timeout and initial pi boot
-* add label to warning prompts for better identification
-* resolve issues related to thermal runaway only being triggered once until a restart
-* add LED control via [M150](https://reprap.org/wiki/G-code#M150:_Set_LED_color) gcode commands
+**[1.0.4](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/1.0.4)** (07/31/2021)
+* fix bug with M150 command not having I parameter causing the command to get lost in the queue, #143
+* make request timeout configurable in settings, #142
+* add numeric StatusSTS messages for chk values, #150
+* M118 support for LED commands for more real-time control based on what's happening on the printer (ie waiting for heat up). The function is similar to the M150 support but you will need to use the command `M118 TASMOTA_M150 I192.168.0.105 R### G### B### W### P###`
+* account for energy data with multiple relay device, #155
 
 ### [All releases](https://github.com/jneilliii/OctoPrint-Tasmota/releases)
 

@@ -2,9 +2,9 @@
 from __future__ import absolute_import
 
 import octoprint.plugin
-from octoprint.access.permissions import Permissions, ADMIN_GROUP, USER_GROUP
+from octoprint.access.permissions import Permissions, ADMIN_GROUP
 from octoprint.util import RepeatedTimer
-from octoprint.events import eventManager, Events
+from octoprint.events import Events
 from flask_babel import gettext
 import time
 import logging
@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 try:
 	from octoprint.util import ResettableTimer
-except:
+except ImportError:
 	class ResettableTimer(threading.Thread):
 		def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
 			threading.Thread.__init__(self)
@@ -172,7 +172,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			idleIgnoreCommands='M105',
 			idleTimeoutWaitTemp=50,
 			event_on_upload_monitoring=False,
-			cost_rate=0
+			cost_rate=0,
+			request_timeout=3
 		)
 
 	def on_settings_save(self, data):
@@ -436,11 +437,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		try:
 			if plug["use_backlog"] and int(plug["backlog_on_delay"]) > 0:
 				backlog_command = "backlog delay {};Power{} on;".format(int(plug["backlog_on_delay"]) * 10, plug["idx"])
-				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": backlog_command}, timeout=3)
+				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": backlog_command}, timeout=self._settings.get_int(["request_timeout"]))
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "ON"
 			else:
-				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Power{} on".format(plug["idx"])}, timeout=3)
+				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Power{} on".format(plug["idx"])}, timeout=self._settings.get_int(["request_timeout"]))
 				response = webresponse.json()
 			chk = response["POWER%s" % plug["idx"]]
 		except:
@@ -450,7 +451,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		self._tasmota_logger.debug("Response: %s" % response)
 
-		if chk.upper() == "ON":
+		if chk.upper() in ["ON", "1"]:
 			if plug["autoConnect"] and self._printer.is_closed_or_error():
 				self._logger.info(self._settings.global_get(['serial']))
 				c = threading.Timer(int(plug["autoConnectDelay"]), self._printer.connect,
@@ -476,7 +477,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._tasmota_logger.debug(
 					"Using backlog commands with a delay value of %s" % str(int(plug["backlog_off_delay"]) * 10))
 				backlog_command = "backlog delay {};Power{} off;".format(int(plug["backlog_off_delay"]) * 10, plug["idx"])
-				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": backlog_command}, timeout=3)
+				requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": backlog_command}, timeout=self._settings.get_int(["request_timeout"]))
 				response = dict()
 				response["POWER%s" % plug["idx"]] = "OFF"
 			if plug["sysCmdOff"]:
@@ -491,11 +492,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				time.sleep(int(plug["autoDisconnectDelay"]))
 			if not plug["use_backlog"]:
 				self._tasmota_logger.debug("Not using backlog commands")
-				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Power{} off".format(plug["idx"])}, timeout=3)
+				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Power{} off".format(plug["idx"])}, timeout=self._settings.get_int(["request_timeout"]))
 				response = webresponse.json()
 			chk = response["POWER%s" % plug["idx"]]
-			if chk.upper() == "OFF":
-				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off",ip=plugip,idx=plugidx))
+			if chk.upper() in ["OFF", "0"]:
+				self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="off", ip=plugip, idx=plugidx))
 		except:
 			self._tasmota_logger.error('Invalid ip or unknown error connecting to %s.' % plug["ip"], exc_info=True)
 			response = "Unknown error turning off %s index %s." % (plugip, plugidx)
@@ -512,7 +513,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			try:
 				plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
 				self._tasmota_logger.debug(plug)
-				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Status 0"}, timeout=3)
+				webresponse = requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "Status 0"}, timeout=self._settings.get_int(["request_timeout"]))
 				self._tasmota_logger.debug("check status code: {}".format(webresponse.status_code))
 				self._tasmota_logger.debug("check status text: {}".format(webresponse.text))
 				response = webresponse.json()
@@ -525,10 +526,19 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				if energy_data is not None:
 					today = datetime.today()
 					c = self.lookup(response, *["StatusSNS", "ENERGY", "Current"])
+					if isinstance(c, list):
+						c = c[int(plugidx)-1]
 					p = self.lookup(response, *["StatusSNS", "ENERGY", "Power"])
+					if isinstance(p, list):
+						p = p[int(plugidx)-1]
 					t = self.lookup(response, *["StatusSNS", "ENERGY", "Total"])
+					if isinstance(t, list):
+						t = t[int(plugidx)-1]
 					v = self.lookup(response, *["StatusSNS", "ENERGY", "Voltage"])
+					if isinstance(v, list):
+						v = v[int(plugidx)-1]
 					self._tasmota_logger.debug("Energy Data: %s" % energy_data)
+					self._logger.debug("Inserting data: {} : {}".format(["ip", "idx", "timestamp", "current", "power", "total", "voltage"], [plugip, plugidx, today.isoformat(' '), c, p, t, v]))
 					db = sqlite3.connect(self.energy_db_path)
 					cursor = db.cursor()
 					cursor.execute(
@@ -560,9 +570,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				sensor_data = None
 
 			self._tasmota_logger.debug("%s index %s is %s" % (plugip, plugidx, chk))
-			if chk.upper() == "ON":
+			if chk.upper() in ["ON", "1"]:
 				response = {"currentState": "on", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
-			elif chk.upper() == "OFF":
+			elif chk.upper() in ["OFF", "0"]:
 				response = {"currentState": "off", "ip": plugip, "idx": plugidx, "energy_data": energy_data, "sensor_data": sensor_data}
 			else:
 				self._tasmota_logger.debug(response)
@@ -572,13 +582,13 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			return response
 
 	def checkSetOption26(self, plugip, username, password):
-		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": password, "cmnd": "SetOption26"}, timeout=3)
+		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": password, "cmnd": "SetOption26"}, timeout=self._settings.get_int(["request_timeout"]))
 		response = webresponse.json()
 		self._tasmota_logger.debug(response)
 		return response
 
 	def setSetOption26(self, plugip, username, password):
-		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": password, "cmnd": "SetOption26 ON"}, timeout=3)
+		webresponse = requests.get("http://{}/cm".format(plugip), params={"user": username, "password": password, "cmnd": "SetOption26 ON"}, timeout=self._settings.get_int(["request_timeout"]))
 		response = webresponse.json()
 		self._tasmota_logger.debug(response)
 		return response
@@ -627,14 +637,14 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._timeout_value = None
 			for plug in self._settings.get(["arrSmartplugs"]):
 				if plug["use_backlog"] and int(plug["backlog_off_delay"]) > 0:
-					webresponse = requests.get("http://{}/cm".format(plug["ip"]), params={"user": plug["username"], "password": plug["password"], "cmnd": "backlog"}, timeout=3)
+					webresponse = requests.get("http://{}/cm".format(plug["ip"]), params={"user": plug["username"], "password": plug["password"], "cmnd": "backlog"}, timeout=self._settings.get_int(["request_timeout"]))
 					self._tasmota_logger.debug("Cleared countdown rules for %s" % plug["ip"])
 					self._tasmota_logger.debug(webresponse)
 			self._tasmota_logger.debug("Power off aborted.")
 			self._tasmota_logger.debug("Restarting idle timer.")
 			self._reset_idle_timer()
 		elif command == 'getEnergyData':
-			self._logger.info(data);
+			self._logger.info(data)
 			response = {}
 			if "start_date" in data and data["start_date"] != "":
 				start_date = data["start_date"]
@@ -691,10 +701,46 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				if led_data["LEDBrightness"] == -1:
 					led_data["LEDBrightness"] = plug["brightness"]
 				try:
-					requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "backlog dimmer {}; color2 {},{},{}; white {}; power{} on".format(led_data["LEDBrightness"], led_data["LEDRed"], led_data["LEDGreen"], led_data["LEDBlue"], led_data["LEDWhite"], plug["idx"])}, timeout=3)
+					requests.get("http://{}/cm".format(plugip), params={"user": plug["username"], "password": plug["password"], "cmnd": "backlog dimmer {}; color2 {},{},{}; white {}; power{} on".format(led_data["LEDBrightness"], led_data["LEDRed"], led_data["LEDGreen"], led_data["LEDBlue"], led_data["LEDWhite"], plug["idx"])}, timeout=self._settings.get_int(["request_timeout"]))
 					self._plugin_manager.send_plugin_message(self._identifier, dict(currentState="on", ip=plug["ip"], idx=plug["idx"], color=led_data))
 				except Exception as e:
 					self._logger.debug("Error: {}".format(e))
+
+	def process_echo(self, comm, line, *args, **kwargs):
+		if not line.startswith("TASMOTA_M150"):
+			return line
+
+		plugip = None
+		workleds = dict(LEDRed=0, LEDBlue=0, LEDGreen=0, LEDWhite=0, LEDBrightness=-1)
+		workval = line.upper().split()
+		for i in workval:
+			firstchar = str(i[0].upper())
+			leddata = str(i[1:].strip())
+			if not leddata.isdigit() and firstchar not in ["I", "T"]:
+				self._tasmota_logger.debug(leddata)
+				return line
+
+			if firstchar == 'T':
+				continue
+			elif firstchar == "I":
+				plugip = leddata
+			elif firstchar == 'R':
+				workleds['LEDRed'] = int(leddata)
+			elif firstchar == 'G' or firstchar == 'U':
+				workleds['LEDGreen'] = int(leddata)
+			elif firstchar == 'B':
+				workleds['LEDBlue'] = int(leddata)
+			elif firstchar == "W":
+				workleds['LEDWhite'] = int(float(leddata) / 255 * 100)
+			elif firstchar == "P":
+				workleds['LEDBrightness'] = int(float(leddata) / 255 * 100)
+			else:
+				self._tasmota_logger.debug(leddata)
+
+		if plugip is not None:
+			t = threading.Timer(0, self.gcode_led, [plugip, workleds])
+			t.daemon = True
+			t.start()
 
 	def processGCODE(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
 		if gcode:
@@ -720,35 +766,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 						else:
 							return
 			elif gcode == "M150":
-				workleds = dict(LEDRed=0, LEDBlue=0, LEDGreen=0, LEDWhite=0, LEDBrightness=-1)
-				workval = cmd.upper().split()
-				for i in workval:
-					firstchar = str(i[0].upper())
-					leddata = str(i[1:].strip())
-					if not leddata.isdigit() and firstchar != 'I':
-						self._tasmota_logger.debug(leddata)
-						return
-
-					if firstchar == 'M':
-						continue
-					elif firstchar == "I":
-						plugip = leddata
-					elif firstchar == 'R':
-						workleds['LEDRed'] = int(leddata)
-					elif firstchar == 'G' or firstchar == 'U':
-						workleds['LEDGreen'] = int(leddata)
-					elif firstchar == 'B':
-						workleds['LEDBlue'] = int(leddata)
-					elif firstchar == "W":
-						workleds['LEDWhite'] = int(float(leddata)/255*100)
-					elif firstchar == "P":
-						workleds['LEDBrightness'] = int(float(leddata)/255*100)
-					else:
-						self._tasmota_logger.debug(leddata)
-
-				t = threading.Timer(0, self.gcode_led, [plugip, workleds])
-				t.daemon = True
-				t.start()
+				self.process_echo(comm_instance, "TASMOTA_{}".format(cmd), *args, **kwargs)
 			elif self.powerOffWhenIdle and not (gcode in self._idleIgnoreCommandsArray):
 				self._waitForHeaters = False
 				self._reset_idle_timer()
@@ -1028,6 +1046,7 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.processGCODE,
+		"octoprint.comm.protocol.gcode.received": __plugin_implementation__.process_echo,
 		"octoprint.comm.protocol.temperatures.received": __plugin_implementation__.monitor_temperatures,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
