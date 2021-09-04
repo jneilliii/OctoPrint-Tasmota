@@ -388,12 +388,12 @@ $(function() {
 
 				var tooltip = plug.label();
 				if(data.sensor_data) {
-					for(k in data.sensor_data) {
-						tooltip += '<br>' + k + ': ' + data.sensor_data["k"]
+					for(let k in data.sensor_data) {
+						tooltip += '<br>' + k + ': ' + data.sensor_data[k]
 					}
 				}
 				if(data.energy_data) {
-					for(k in data.energy_data) {
+					for(let k in data.energy_data) {
 						tooltip += '<br>' + k + ': ' + data.energy_data[k]
 					}
 				}
