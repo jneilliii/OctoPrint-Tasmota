@@ -89,6 +89,12 @@
 					<label class="checkbox">
 					<input type="checkbox" title="{{ _('When enabled auto power on enabled devices when file is uploaded to OctoPrint with the option to automatically start printing.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_upload_monitoring, tooltip: {}" /> {{ _('Upload Event Monitoring') }}
 					</label>
+					<label class="checkbox" data-bind="visible: settings.settings.plugins.tasmota.event_on_upload_monitoring()" style="margin-left: 20px;">
+					<input type="checkbox" title="{{ _('Enable to auto power on when uploading via the web interface rather than from a Slicer with the option to automatically start.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_upload_monitoring_always, tooltip: {}" /> {{ _('Include uploads via web interface') }}
+					</label>
+					<label class="checkbox" data-bind="visible: settings.settings.plugins.tasmota.event_on_upload_monitoring_always()" style="margin-left: 20px;">
+					<input type="checkbox" title="{{ _('Enable to automatically start the print after the Tasmota device is powered on and printer auto connects.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_upload_monitoring_start_print, tooltip: {}" /> {{ _('Automtically start print after on') }}
+					</label>
 				</div>
 			</div>
 		</div>

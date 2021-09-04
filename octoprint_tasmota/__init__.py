@@ -173,6 +173,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			"idleTimeoutWaitTemp": 50,
 			"idleWaitForTimelapse": True,
 			"event_on_upload_monitoring": False,
+			"event_on_upload_monitoring_always": False,
+			"event_on_upload_monitoring_start_print": False,
 			"cost_rate": 0,
 			"request_timeout": 3
 		}
@@ -350,14 +352,15 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._autostart_file = None
 
 		# File Uploaded Event
-		if event == Events.UPLOAD and self._settings.getBoolean(["event_on_upload_monitoring"]):
-			if payload.get("print", False):  # implemented in OctoPrint version 1.4.1
-				self._tasmota_logger.debug(
-					"File uploaded: %s. Turning enabled plugs on." % payload.get("name", ""))
+		if event == Events.UPLOAD and self._settings.get_boolean(["event_on_upload_monitoring"]):
+			if payload.get("print", False) or self._settings.get_boolean(["event_on_upload_monitoring_always"]):  # implemented in OctoPrint version 1.4.1
+				self._tasmota_logger.debug("File uploaded: %s. Turning enabled plugs on." % payload.get("name", ""))
+				self._tasmota_logger.debug("Clearing autostart.")
+				self._autostart_file = None
 				self._tasmota_logger.debug(payload)
 				for plug in self._settings.get(['arrSmartplugs']):
 					self._tasmota_logger.debug(plug)
-					if plug["event_on_upload"] is True and not self._printer.is_ready():
+					if plug["event_on_upload"] is True:
 						self._tasmota_logger.debug("powering on %s due to %s event." % (plug["ip"], event))
 						self.turn_on(plug["ip"], plug["idx"])
 						response = self.check_status(plug["ip"], plug["idx"])
@@ -365,8 +368,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							self._tasmota_logger.debug(
 								"power on successful for %s attempting connection in %s seconds" % (
 									plug["ip"], plug.get("autoConnectDelay", "0")))
-							if payload.get("path", False) and payload.get("target") == "local":
-								self._autostart_file = payload.get("path")
+							if payload.get("path", False) and payload.get("target") == "local" and (payload.get("print", False) or self._settings.get_boolean(["event_on_upload_monitoring_start_print"])):
+								if self._printer.is_ready():
+									self._printer.select_file(payload.get("path"), False, printAfterSelect=True)
+								else:
+									self._autostart_file = payload.get("path")
 
 		# Print Started Event
 		if event == Events.PRINT_STARTED and self._settings.getFloat(["cost_rate"]) > 0:
@@ -895,6 +901,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._timer_start()
 		else:
 			self._tasmota_logger.debug("Aborted power off due to activity.")
+			self._reset_idle_timer()
 
 	##~~ Timelapse Monitoring
 
@@ -1092,5 +1099,5 @@ def __plugin_load__():
 		"octoprint.comm.protocol.gcode.received": __plugin_implementation__.process_echo,
 		"octoprint.comm.protocol.temperatures.received": __plugin_implementation__.monitor_temperatures,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
-		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
 	}

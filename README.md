@@ -40,6 +40,10 @@ Once installed go into settings and enter the ip address for your TP-Link Smartp
     - When enabled if printer becomes disconnected relays with the option enabled will be automatically powered off.
   - **Upload Event Monitoring**
     - When enabled auto power on enabled devices when file is uploaded to OctoPrint with the option to automatically start printing.
+    - **Include uploads via web interface**
+      - Enable to auto power on when uploading via the web interface rather than from a Slicer with the option to automatically start.
+      - **Automtically start print after on**
+        - Enable to automatically start the print after the Tasmota device is powered on and printer auto connects.
   - **Connect Event Monitoring**
     - When enabled auto power on enabled devices when the Connect button is pressed in OctoPrint.
   - **Enable polling of status.**
