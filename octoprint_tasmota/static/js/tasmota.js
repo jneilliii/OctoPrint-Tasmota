@@ -358,7 +358,7 @@ $(function() {
 				self.settings.settings.plugins.tasmota.powerOffWhenIdle(data.powerOffWhenIdle);
 
 				if (data.type == "timeout") {
-					if ((data.timeout_value != null) && (data.timeout_value > 0)) {
+					if ((data.timeout_value != null) && (data.timeout_value > 0) && (typeof(ko.utils.arrayFirst(self.arrSmartplugsStates.items(), function(item){return item.value() == 'on'})) !== 'undefined')) {
 						var progress_percent = Math.floor((data.timeout_value/self.settings.settings.plugins.tasmota.abortTimeout())*100)
 						var progress_class = (progress_percent<25)?'progress-danger':(progress_percent>75)?'progress-success':'progress-warning';
 						self.timeoutPopupOptions.text = '<div class="progress progress-tasmota '+progress_class+'"><div class="bar">'+gettext('Powering Off in ')+' '+data.timeout_value+' '+gettext('secs')+'</div><div class="progress-text" style="clip-path: inset(0 0 0 '+progress_percent+'%);-webkit-clip-path: inset(0 0 0 '+progress_percent+'%);">'+gettext('Powering Off in ')+' '+data.timeout_value+' '+gettext('secs')+'</div></div>';
