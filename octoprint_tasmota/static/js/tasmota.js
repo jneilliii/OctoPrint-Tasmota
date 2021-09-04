@@ -503,12 +503,13 @@ $(function() {
 				data: JSON.stringify({
 					command: "checkSetOption26",
 					ip: data.ip(),
+                    idx: data.idx(),
 					username: data.username(),
 					password: data.password()
 				}),
 				contentType: "application/json; charset=UTF-8"
 			}).done(function(response){
-				if(response["SetOption26"] == "OFF"){
+				if(response["SetOption26"] == "OFF" && data.idx() !== '') {
 					var test = confirm("SetOption26 needs to be updated to ON for proper operation. Would you like to set that option now?");
 					if (test) {
 						$.ajax({
