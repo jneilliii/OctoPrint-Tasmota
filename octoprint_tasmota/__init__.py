@@ -603,6 +603,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if chk.upper() in ["ON", "1"]:
 				response = {"currentState": "on", "ip": plugip, "idx": plugidx, "energy_data": energy_data,
 							"sensor_data": sensor_data}
+				if self._settings.get_boolean(["powerOffWhenIdle"]) and plug["automaticShutdownEnabled"] and self._abort_timer is None and (self._idleTimer is None or not self._idleTimer.is_alive()):
+					self._tasmota_logger.debug("Starting idle timer since ON state was detected for %s:%s" % (plugip, plugidx))
+					self._reset_idle_timer()
 			elif chk.upper() in ["OFF", "0"]:
 				response = {"currentState": "off", "ip": plugip, "idx": plugidx, "energy_data": energy_data,
 							"sensor_data": sensor_data}
