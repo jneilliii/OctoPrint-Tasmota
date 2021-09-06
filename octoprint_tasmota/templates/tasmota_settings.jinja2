@@ -89,6 +89,12 @@
 					<label class="checkbox">
 					<input type="checkbox" title="{{ _('When enabled auto power on enabled devices when file is uploaded to OctoPrint with the option to automatically start printing.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_upload_monitoring, tooltip: {}" /> {{ _('Upload Event Monitoring') }}
 					</label>
+					<label class="checkbox" data-bind="visible: settings.settings.plugins.tasmota.event_on_upload_monitoring()" style="margin-left: 20px;">
+					<input type="checkbox" title="{{ _('Enable to auto power on when uploading via the web interface rather than from a Slicer with the option to automatically start.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_upload_monitoring_always, tooltip: {}" /> {{ _('Include uploads via web interface') }}
+					</label>
+					<label class="checkbox" data-bind="visible: settings.settings.plugins.tasmota.event_on_upload_monitoring_always()" style="margin-left: 20px;">
+					<input type="checkbox" title="{{ _('Enable to automatically start the print after the Tasmota device is powered on and printer auto connects.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.event_on_upload_monitoring_start_print, tooltip: {}" /> {{ _('Automtically start print after on') }}
+					</label>
 				</div>
 			</div>
 		</div>
@@ -176,7 +182,7 @@
 				<label class="control-label">{{ _('Idle Timeout') }}</label>
 				<div class="controls">
 					<div class="input-append" data-toggle="tooltip" data-bind="tooltip: {}" title="{{ _('Amount of time that will lapse before printer is considered idle and relays will be powered off.') }}">
-						<input type="number" class="input-mini text-right" data-bind="value: settings.settings.plugins.tasmota.idleTimeout, enable: settings.settings.plugins.tasmota.powerOffWhenIdle() && settings.settings.plugins.tasmota.powerOffWhenIdle()" disabled />
+						<input type="number" class="input-mini text-right" data-bind="value: settings.settings.plugins.tasmota.idleTimeout, enable: settings.settings.plugins.tasmota.powerOffWhenIdle()" disabled />
 						<span class="add-on">{{ _('mins') }}</span>
 					</div>
 				</div>
@@ -186,8 +192,8 @@
 			<div class="control-group span6">
 				<label class="control-label">{{ _('Idle Target Temperature') }}</label>
 				<div class="controls">
-					<div class="input-append" data-toggle="tooltip" data-bind="tooltip: {}" title="{{ _('Power off will be delayed untill all heaters reach this temperature.') }}">
-						<input type="number" class="input-mini text-right" data-bind="value: settings.settings.plugins.tasmota.idleTimeoutWaitTemp, enable: settings.settings.plugins.tasmota.powerOffWhenIdle() && settings.settings.plugins.tasmota.powerOffWhenIdle()" disabled />
+					<div class="input-append" data-toggle="tooltip" data-bind="tooltip: {}" title="{{ _('Power off will be delayed until all heaters reach this temperature.') }}">
+						<input type="number" class="input-mini text-right" data-bind="value: settings.settings.plugins.tasmota.idleTimeoutWaitTemp, enable: settings.settings.plugins.tasmota.powerOffWhenIdle()" disabled />
 						<span class="add-on">{{ _('degs') }}</span>
 					</div>
 				</div>
@@ -197,8 +203,17 @@
 			<div class="control-group">
 				<label class="control-label">{{ _('GCode Commands to Ignore for Idle') }}</label>
 				<div class="controls" data-toggle="tooltip" data-bind="tooltip: {}" title="{{ _('Comma separated list of gcode commands to ignore for determining printer idle state.') }}">
-					<input type="text" class="input-block-level" data-bind="value: settings.settings.plugins.tasmota.idleIgnoreCommands, enable: settings.settings.plugins.tasmota.powerOffWhenIdle() && settings.settings.plugins.tasmota.powerOffWhenIdle()" disabled />
+					<input type="text" class="input-block-level" data-bind="value: settings.settings.plugins.tasmota.idleIgnoreCommands, enable: settings.settings.plugins.tasmota.powerOffWhenIdle()" disabled />
 				</div>
+			</div>
+		</div>
+		<div class="row-fluid" data-bind="visible: settings.settings.plugins.tasmota.powerOffWhenIdle()">
+			<div class="control-group">
+				<div class="controls">
+                    <label class="checkbox">
+					<input type="checkbox" title="{{ _('When enabled idle power off will wait for timelapse to complete before powering off. Uncheck this to not wait, helpful for very long prints and timelapse rendering.') }}" data-toggle="tooltip" data-bind="checked: settings.settings.plugins.tasmota.idleWaitForTimelapse, tooltip: {}" /> {{ _('Wait for Timelapse') }}
+				    </label>
+                </div>
 			</div>
 		</div>
 	</div>
@@ -212,7 +227,7 @@
 	<div class="modal-body">
 		<table class="table table-condensed">
 			<tr>
-				<td><div class="control-group" data-bind="css: {error: ip().length == 0}"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('IP adress of your tasmota device.') }}"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /></div></div></td>
+				<td><div class="control-group" data-bind="css: {error: ip().length == 0}"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('IP address of your tasmota device.') }}"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /></div></div></td>
 				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Index of the relay, specifically used for multiple plug relay devices.') }}"><label class="control-label">{{ _('Index') }}</label><input type="number" min="1" class="input-block-level" data-bind="value: idx" /></div></td>
 				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Name to display on hover of the navbar button.') }}"><label class="control-label">{{ _('Label') }}</label><input type="text" class="input input-small" data-bind="value: label" /></div></td>
 				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Username to connect to Tasmota web interface if required.') }}"><label class="control-label">{{ _('Username') }}</label><input type="text" class="input-block-level" data-bind="value: username" /></div></td>
@@ -252,7 +267,7 @@
 				</td>
 				<td></td>
 				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Prompt for confirmation before powering off via the navbar button.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: displayWarning" /> Warning Prompt</label></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Prompt for confimration before powering off when a print is active.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting" /> Warn While Printing</label></div></td>
+				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Prompt for confirmation before powering off when a print is active.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting" /> Warn While Printing</label></div></td>
 				<td></td>
 			</tr>
 			<tr>

@@ -358,7 +358,7 @@ $(function() {
 				self.settings.settings.plugins.tasmota.powerOffWhenIdle(data.powerOffWhenIdle);
 
 				if (data.type == "timeout") {
-					if ((data.timeout_value != null) && (data.timeout_value > 0)) {
+					if ((data.timeout_value != null) && (data.timeout_value > 0) && (typeof(ko.utils.arrayFirst(self.arrSmartplugsStates.items(), function(item){return item.value() == 'on'})) !== 'undefined')) {
 						var progress_percent = Math.floor((data.timeout_value/self.settings.settings.plugins.tasmota.abortTimeout())*100)
 						var progress_class = (progress_percent<25)?'progress-danger':(progress_percent>75)?'progress-success':'progress-warning';
 						self.timeoutPopupOptions.text = '<div class="progress progress-tasmota '+progress_class+'"><div class="bar">'+gettext('Powering Off in ')+' '+data.timeout_value+' '+gettext('secs')+'</div><div class="progress-text" style="clip-path: inset(0 0 0 '+progress_percent+'%);-webkit-clip-path: inset(0 0 0 '+progress_percent+'%);">'+gettext('Powering Off in ')+' '+data.timeout_value+' '+gettext('secs')+'</div></div>';
@@ -388,12 +388,12 @@ $(function() {
 
 				var tooltip = plug.label();
 				if(data.sensor_data) {
-					for(k in data.sensor_data) {
-						tooltip += '<br>' + k + ': ' + data.sensor_data["k"]
+					for(let k in data.sensor_data) {
+						tooltip += '<br>' + k + ': ' + data.sensor_data[k]
 					}
 				}
 				if(data.energy_data) {
-					for(k in data.energy_data) {
+					for(let k in data.energy_data) {
 						tooltip += '<br>' + k + ': ' + data.energy_data[k]
 					}
 				}
@@ -503,12 +503,13 @@ $(function() {
 				data: JSON.stringify({
 					command: "checkSetOption26",
 					ip: data.ip(),
+                    idx: data.idx(),
 					username: data.username(),
 					password: data.password()
 				}),
 				contentType: "application/json; charset=UTF-8"
 			}).done(function(response){
-				if(response["SetOption26"] == "OFF"){
+				if(response["SetOption26"] == "OFF" && data.idx() !== '') {
 					var test = confirm("SetOption26 needs to be updated to ON for proper operation. Would you like to set that option now?");
 					if (test) {
 						$.ajax({
