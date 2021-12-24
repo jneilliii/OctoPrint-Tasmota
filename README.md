@@ -1,6 +1,6 @@
 # OctoPrint-Tasmota
 
-This plugin is to control ITead Sonoff devices that have been flashed with [Sonoff-Tasmota](https://github.com/arendst/Sonoff-Tasmota) via web calls.
+This plugin is to control devices that have been flashed with [Tasmota](https://github.com/arendst/Tasmota) via web calls.
 
 **Requires minimum Tasmota firmware version 5.11.0.**
 
@@ -23,7 +23,7 @@ or manually using this URL:
 
 ## Configuration
 
-Once installed go into settings and enter the ip address for your TP-Link Smartplug device. Adjust additional settings as needed.
+Once installed go into settings and enter the ip address for your Tasmota device. Adjust additional settings as needed.
 
 ## Settings Explained
 
