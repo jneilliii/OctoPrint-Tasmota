@@ -77,3 +77,11 @@ input[type="datetime-local"].alert-error {
     margin-top: 0px;
     vertical-align: baseline;
 }
+
+.navbar .nav > li > a.tasmota_button {
+    float: left;
+}
+
+html#touch a.tasmota_button {
+    float: unset;
+}
