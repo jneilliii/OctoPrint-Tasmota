@@ -203,12 +203,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
 														  timeout_value=self._timeout_value))
 
-			if self.powerOffWhenIdle == True:
-				self._tasmota_logger.debug("Settings saved, Automatic Power Off Endabled, starting idle timer...")
-				self._start_idle_timer()
-			else:
-				self._tasmota_logger.debug("Settings saved, Automatic Power Off Disabled, stopping idle timer...")
-				self._stop_idle_timer()
+		if self.powerOffWhenIdle == True:
+			self._tasmota_logger.debug("Settings saved, Automatic Power Off Enabled, starting idle timer...")
+			self._start_idle_timer()
+		else:
+			self._tasmota_logger.debug("Settings saved, Automatic Power Off Disabled, stopping idle timer...")
+			self._stop_idle_timer()
 
 		new_debug_logging = self._settings.get_boolean(["debug_logging"])
 		new_polling_value = self._settings.get_boolean(["pollingEnabled"])
