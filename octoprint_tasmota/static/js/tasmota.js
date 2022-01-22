@@ -45,7 +45,7 @@ $(function() {
 
 		self.toggleShutdownTitle = ko.pureComputed(function() {
 			return self.automaticShutdownEnabled() ? 'Disable Automatic Power Off' : 'Enable Automatic Power Off';
-		})
+		});
 
         self.filesViewModel.getAdditionalData = function(data) {
 			var output = "";
@@ -121,7 +121,7 @@ $(function() {
 						command: "enableAutomaticShutdown"
 					}),
 					contentType: "application/json; charset=UTF-8"
-				})
+				});
 			} else {
 				$.ajax({
 					url: API_BASEURL + "plugin/tasmota",
@@ -131,9 +131,9 @@ $(function() {
 						command: "disableAutomaticShutdown"
 					}),
 					contentType: "application/json; charset=UTF-8"
-				})
+				});
 			}
-		}
+		};
 
 		self.automaticShutdownEnabled.subscribe(self.onAutomaticShutdownEvent, self);
 
@@ -143,7 +143,7 @@ $(function() {
 			} else {
 				self.automaticShutdownEnabled(true);
 			}
-		}
+		};
 
 		self.abortShutdown = function(abortShutdownValue) {
 			self.timeoutPopup.remove();
@@ -156,24 +156,28 @@ $(function() {
 					command: "abortAutomaticShutdown"
 				}),
 				contentType: "application/json; charset=UTF-8"
-			})
-		}
+			});
+		};
 
 		self.graph_start_date = ko.observable(moment().subtract(1, 'days').format('YYYY-MM-DDTHH:mm'));
 		self.graph_end_date = ko.observable(moment().format('YYYY-MM-DDTHH:mm'));
 
 		self.onBeforeBinding = function() {
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
-		}
+            if($('html').attr('id') === 'touch') {
+                // $('#sidebar_plugin_tasmota_wrapper > div.accordion-heading > div').appendTo('#sidebar_plugin_tasmota');
+
+            }
+		};
 
 		self.onAllBound = function() {
 			self.checkStatuses();
-		}
+		};
 
 		self.onEventSettingsUpdated = function(payload) {
 			self.settings.requestData();
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
-		}
+		};
 
 		self.onEventPrinterStateChanged = function(payload) {
 			if (payload.state_id == "PRINTING" || payload.state_id == "PAUSED"){
@@ -181,7 +185,7 @@ $(function() {
 			} else {
 				self.isPrinting(false);
 			}
-		}
+		};
 
 		self.plotEnergyData = function(){
 			$.ajax({
@@ -248,20 +252,20 @@ $(function() {
 
 					Plotly.react('tasmota_graph', traces, layout, options);
 				});
-		}
+		};
 
 		self.legend_visible = ko.observable(false);
 
 		self.toggle_legend = function(){
 			self.legend_visible(self.legend_visible() ? false : true);
 			Plotly.relayout('tasmota_graph',{showlegend: self.legend_visible()});
-		}
+		};
 
 		self.onTabChange = function(current, previous) {
 			if (current === "#tab_plugin_tasmota") {
 				self.plotEnergyData();
 			}
-		}
+		};
 
 		self.addPlug = function() {
 			self.selectedPlug({'ip':ko.observable(''),
@@ -304,20 +308,20 @@ $(function() {
                                'brightness':ko.observable(50)});
 			self.settings.settings.plugins.tasmota.arrSmartplugs.push(self.selectedPlug());
 			$("#TasmotaEditor").modal("show");
-		}
+		};
 
 		self.editPlug = function(data) {
 			self.selectedPlug(data);
 			$("#TasmotaEditor").modal("show");
-		}
+		};
 
 		self.removePlug = function(row) {
 			self.settings.settings.plugins.tasmota.arrSmartplugs.remove(row);
-		}
+		};
 
 		self.cancelClick = function(data) {
 			self.processing.remove(data.ip());
-		}
+		};
 
 		self.onDataUpdaterPluginMessage = function(plugin, data) {
 			if (plugin != "tasmota" || !data) {
@@ -427,6 +431,9 @@ $(function() {
 		};
 
 		self.toggleRelay = function(data) {
+            if(data.is_sensor_only()){
+                return
+            }
 			self.processing.push(data.ip());
 			switch(self.arrSmartplugsStates.get(data.ip()+'_'+data.idx())()){
 				case "on":
@@ -438,11 +445,11 @@ $(function() {
 				default:
 					self.checkStatus(data);
 			}
-		}
+		};
 
 		self.turnOn = function(data) {
 			self.sendTurnOn(data);
-		}
+		};
 
 		self.sendTurnOn = function(data) {
 			$.ajax({
@@ -492,7 +499,7 @@ $(function() {
 			    console.log('off', data);
 			    self.onDataUpdaterPluginMessage('tasmota', data);
             });
-		}
+		};
 
 		self.checkSetOption26 = function(data, evt) {
 			evt.currentTarget.blur();
@@ -534,7 +541,7 @@ $(function() {
 					alert("Tasmota device responded and is configured properly.");
 				}
 				});
-		}
+		};
 
 		self.checkStatus = function(data) {
 			$.ajax({

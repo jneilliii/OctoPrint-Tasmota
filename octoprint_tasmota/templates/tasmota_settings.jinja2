@@ -225,53 +225,55 @@
 		<h3>Tasmota Editor</h3>
 	</div>
 	<div class="modal-body">
-		<table class="table table-condensed">
-			<tr>
-				<td><div class="control-group" data-bind="css: {error: ip().length == 0}"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('IP address of your tasmota device.') }}"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /></div></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Index of the relay, specifically used for multiple plug relay devices.') }}"><label class="control-label">{{ _('Index') }}</label><input type="number" min="1" class="input-block-level" data-bind="value: idx" /></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Name to display on hover of the navbar button.') }}"><label class="control-label">{{ _('Label') }}</label><input type="text" class="input input-small" data-bind="value: label" /></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Username to connect to Tasmota web interface if required.') }}"><label class="control-label">{{ _('Username') }}</label><input type="text" class="input-block-level" data-bind="value: username" /></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Password to connect to Tasmota web interface if required.') }}"><label class="control-label">{{ _('Password') }}</label><input type="text" class="input input-small" data-bind="value: password" /></div></td>
-				<td style="text-align: center;vertical-align: middle;"><button class="btn" data-bind="click: $root.checkSetOption26, enable: ip().length > 0">Verify</button></td>
-			</tr>
-			<tr>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Color to display when device is on.') }}"><label class="control-label">{{ _('On Color') }}</label><input type="color" class="input input-small" data-bind="value: on_color" /></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Color to display when device is off.') }}"><label class="control-label">{{ _('Off Color') }}</label><input type="color" class="input input-small" data-bind="value: off_color" /></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Color to display when device status is unknown.') }}"><label class="control-label">{{ _('Unknown Color') }}</label><input type="color" class="input input-small" data-bind="value: unknown_color" /></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Fontawesom icon class name for navbar button.') }}"><label class="control-label">{{ _('Icon Class') }}</label><input type="text" class="input-block-level" data-bind="value: icon, iconpicker: icon,iconpickerOptions: {hideOnSelect: true, collision: true}" /></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Is an LED or WS2812 type device connected, enter brightness value as percentage.') }}"><label class="control-label"><input type="checkbox" data-bind="checked: is_led" /> {{ _('LED') }}</label><div class="input-append" data-bind="visible: is_led"><input type="number" min="1" max="100" class="input-small" data-bind="value: brightness" /><span class="add-on">%</span></div></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Sensor identifier for connected sensors, ie DHT11 or BME280') }}"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /></div></td>
-			</tr>
-			<tr>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power on when file is uploaded.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_upload, enable: $root.settings.settings.plugins.tasmota.event_on_upload_monitoring()" /> On with Upload</label></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power on when pressing Connect button.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_connecting, enable: $root.settings.settings.plugins.tasmota.event_on_connecting_monitoring()" /> On with Connect</label></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power off when printer is idle.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: automaticShutdownEnabled, enable: $root.settings.settings.plugins.tasmota.powerOffWhenIdle()" /> Off on Idle</label></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Power off if temperature exceeds configured max temperatures.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway" /> Thermal Runaway</label></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power off this relay when Error Event Monitoring is enabled.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_error, enable: $root.settings.settings.plugins.tasmota.event_on_error_monitoring()" disabled /> {{ _('Off on Error') }}</label></div></td>
-				<td><div class="controls"data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power off this relay when Disconnect Event Monitoring is enabled.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_disconnect, enable: $root.settings.settings.plugins.tasmota.event_on_disconnect_monitoring()" disabled /> {{ _('Off on Disconnect') }}</label></div></td>
-			</tr>
-			<tr>
-				<td>
+		<div class="table table-condensed">
+			<div class="row-fluid">
+				<div class="span2"><div class="control-group" data-bind="css: {error: ip().length == 0}"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('IP address of your tasmota device.') }}"><label class="control-label">{{ _('IP') }}</label><input type="text" class="input-block-level" data-bind="value: ip, valueUpdate: 'keyup'" /></div></div></div>
+				<div class="span1"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Index of the relay, specifically used for multiple plug relay devices.') }}"><label class="control-label">{{ _('Index') }}</label><input type="number" min="1" class="input-block-level" data-bind="value: idx" /></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Name to display on hover of the navbar button.') }}"><label class="control-label">{{ _('Label') }}</label><input type="text" class="input-block-level" data-bind="value: label" /></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Username to connect to Tasmota web interface if required.') }}"><label class="control-label">{{ _('Username') }}</label><input type="text" class="input-block-level" data-bind="value: username" /></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Password to connect to Tasmota web interface if required.') }}"><label class="control-label">{{ _('Password') }}</label><input type="text" class="input-block-level" data-bind="value: password" /></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Sensor identifier for connected sensors, ie DHT11 or BME280') }}"><label class="control-label">{{ _('Sensor Identifier') }}</label><input type="text" class="input-block-level" data-bind="value: sensor_identifier" /></div></div>
+                <div class="span1"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Use this button to check connectivity.') }}"><label class="control-label">&nbsp;&nbsp;</label></div><button class="btn" data-bind="click: $root.checkSetOption26, enable: ip().length > 0">Verify</button></div>
+            </div>
+			<div class="row-fluid">
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Is an LED or WS2812 type device connected, enter brightness value as percentage.') }}"><label class="control-label"><input type="checkbox" data-bind="checked: is_led" /> {{ _('LED') }}</label><div class="input-append" data-bind="visible: is_led"><input type="number" min="1" max="100" class="input-small" data-bind="value: brightness" /><span class="add-on">%</span></div></div></div>
+				<div class="span1"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Ignore on/off state, for example a sensor only device.') }}"><label class="control-label"><input type="checkbox" data-bind="checked: is_sensor_only" /> {{ _('Hide') }}</label></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Color to display when device is on.') }}"><label class="control-label">{{ _('On Color') }}</label><input type="color" class="input input-small" data-bind="value: on_color" /></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Color to display when device is off.') }}"><label class="control-label">{{ _('Off Color') }}</label><input type="color" class="input input-small" data-bind="value: off_color" /></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Color to display when device status is unknown.') }}"><label class="control-label">{{ _('Unknown Color') }}</label><input type="color" class="input input-small" data-bind="value: unknown_color" /></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Fontawesom icon class name for navbar button.') }}"><label class="control-label">{{ _('Icon Class') }}</label><input type="text" class="input-block-level" data-bind="value: icon, iconpicker: icon,iconpickerOptions: {hideOnSelect: true, collision: true}" /></div></div>
+				<div class="span1"></div>
+			</div>
+			<div class="row-fluid">
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power on when file is uploaded.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_upload, enable: $root.settings.settings.plugins.tasmota.event_on_upload_monitoring()" /> On with Upload</label></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power on when pressing Connect button.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_connecting, enable: $root.settings.settings.plugins.tasmota.event_on_connecting_monitoring()" /> On with Connect</label></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power off when printer is idle.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: automaticShutdownEnabled, enable: $root.settings.settings.plugins.tasmota.powerOffWhenIdle()" /> Off on Idle</label></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Power off if temperature exceeds configured max temperatures.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: thermal_runaway" /> Thermal Runaway</label></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power off this relay when Error Event Monitoring is enabled.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_error, enable: $root.settings.settings.plugins.tasmota.event_on_error_monitoring()" disabled /> {{ _('Off on Error') }}</label></div></div>
+				<div class="span2"><div class="controls"data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically power off this relay when Disconnect Event Monitoring is enabled.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: event_on_disconnect, enable: $root.settings.settings.plugins.tasmota.event_on_disconnect_monitoring()" disabled /> {{ _('Off on Disconnect') }}</label></div></td>
+            </div>
+			<div class="row-fluid">
+				<div class="span2">
 					<div class="row-fluid controls input-append" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically connect to your printer after configured delay from power on.') }}">
 						<label class="checkbox"><input type="checkbox" data-bind="checked: autoConnect" /> Auto Connect</label>
 						<input type="text" data-bind="value: autoConnectDelay,visible: autoConnect" class="input input-mini" />
 						<span class="add-on" data-bind="visible: autoConnect">secs</span>
 					</div>
-				</td>
-				<td>
+				</div>
+				<div class="span2">
 					<div class="row-fluid controls input-append" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Automatically disconnect from printer and then power off relay after configured delay.') }}">
 						<label class="checkbox"><input type="checkbox" data-bind="checked: autoDisconnect" /> Auto Disconnect</label>
 						<input type="text" data-bind="value: autoDisconnectDelay,visible: autoDisconnect" class="input input-mini" />
 						<span class="add-on" data-bind="visible: autoDisconnect">secs</span>
 					</div>
-				</td>
-				<td></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Prompt for confirmation before powering off via the navbar button.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: displayWarning" /> Warning Prompt</label></div></td>
-				<td><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Prompt for confirmation before powering off when a print is active.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting" /> Warn While Printing</label></div></td>
-				<td></td>
-			</tr>
-			<tr>
-				<td colspan="3">
+                </div>
+                    <div class="span2"></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Prompt for confirmation before powering off via the navbar button.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: displayWarning" /> Warning Prompt</label></div></div>
+				<div class="span2"><div class="controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Prompt for confirmation before powering off when a print is active.') }}"><label class="checkbox"><input type="checkbox" data-bind="checked: warnPrinting" /> Warn While Printing</label></div></div>
+				<div class="span2"></div>
+			</div>
+			<div class="row-fluid">
+				<div class="span6">
 					<div class="row-fluid controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('Use tasmota\'s built in countdown functionality to offload the power operations. Helpful for safe shutdown of pi.') }}">
 						<label class="checkbox"><input type="checkbox" data-bind="checked: use_backlog"/> Use Countdown Timers</label>
 					</div>
@@ -291,8 +293,8 @@
 							</div>
 						</div>
 					</div>
-				</td>
-				<td colspan="3">
+				</div>
+				<div class="span6">
 					<div class="row-fluid controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('When checked this will enable the processing of M80 and M81 commands from gcode to power on/off device.') }}">
 						<label class="checkbox"><input type="checkbox" data-bind="checked: gcodeEnabled"/>GCODE On <span class="label" title="Click to copy this gcode command to power on relay to the clipboard." data-bind="text: $root.gcodeOnString($data),visible: gcodeEnabled,click: function(data, evt) {copyToClipboard($(evt.currentTarget).text())}"></span> / Off <span class="label" title="Click to copy this gcode command to power off relay." data-bind="text: $root.gcodeOffString($data),visible: gcodeEnabled,click: function(data, evt) {copyToClipboard($(evt.currentTarget).text())}"></span> Trigger</label>
 					</div>
@@ -312,10 +314,10 @@
 							</div>
 						</div>
 					</div>
-				</td>
-			</tr>
-			<tr>
-				<td colspan="3">
+				</div>
+			</div>
+			<div class="row-fluid">
+				<div class="span6">
 					<div class="row-fluid controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('When checked will run the system command configured in setting below after sending on command to device.') }}">
 						<label class="checkbox"><input type="checkbox" data-bind="checked: sysCmdOn"/> Run System Command After On</label>
 					</div>
@@ -334,8 +336,8 @@
 							</div>
 						</div>
 					</div>
-				</td>
-				<td colspan="3">
+                </div>
+				<div class="span6">
 					<div class="row-fluid controls" data-toggle="tooltip" data-bind="tooltip: {container: '#TasmotaEditor'}" title="{{ _('When checked will run the system command configured in setting below before sending off command to device.') }}">
 						<label class="checkbox"><input type="checkbox" data-bind="checked: sysCmdOff"/> Run System Command Before Off</label>
 					</div>
@@ -354,11 +356,12 @@
 							</div>
 						</div>
 					</div>
-				</td>
-			</tr>
-		</table>
+                </div>
+            </div>
+		</div>
+        </div>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
+		<small>{{ _('Make sure to click save in the main settings after making changes here.') }}</small> <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
 	</div>
 </div>
