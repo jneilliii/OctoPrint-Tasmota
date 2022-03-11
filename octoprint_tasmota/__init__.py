@@ -822,6 +822,20 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._reset_idle_timer()
 			return
 
+	def processAtCommand(self, comm_instance, phase, command, parameters, tags=None, *args, **kwargs):
+		if command == 'TASMOTAIDLEON':
+			self.powerOffWhenIdle = True
+			self._reset_idle_timer()
+		if command == 'TASMOTAIDLEOFF':
+			self.powerOffWhenIdle = False
+			self._stop_idle_timer()
+			if self._abort_timer is not None:
+				self._abort_timer.cancel()
+				self._abort_timer = None
+			self._timeout_value = None
+		if command in ["TASMOTAIDLEON", "TASMOTAIDLEOFF"]:
+			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
+
 	##~~ Temperatures received hook
 
 	def check_temps(self, parsed_temps):
@@ -1078,6 +1092,7 @@ def __plugin_load__():
 	__plugin_hooks__ = {
 		"octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.processGCODE,
 		"octoprint.comm.protocol.gcode.received": __plugin_implementation__.process_echo,
+		"octoprint.comm.protocol.atcommand.sending": __plugin_implementation__.processAtCommand,
 		"octoprint.comm.protocol.temperatures.received": __plugin_implementation__.monitor_temperatures,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
