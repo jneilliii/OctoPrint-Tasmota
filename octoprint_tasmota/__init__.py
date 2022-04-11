@@ -13,6 +13,7 @@ import requests
 import threading
 import sqlite3
 import flask
+from octoprint.util.version import is_octoprint_compatible
 from uptime import uptime
 from datetime import datetime, timedelta
 
@@ -284,12 +285,20 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ AssetPlugin mixin
 
 	def get_assets(self):
+		css = ["css/fontawesome-iconpicker.css",
+			   "css/tasmota.css",
+			   ]
+
+		if not is_octoprint_compatible(">=1.5.0"):
+			css += [
+				"css/font-awesome.min.css",
+				"css/font-awesome-v4-shims.min.css",
+			]
+
 		return {'js': ["js/jquery-ui.min.js", "js/knockout-sortable.1.2.0.js", "js/fontawesome-iconpicker.js",
 					   "js/ko.iconpicker.js", "js/plotly-latest.min.js", "js/knockout-bootstrap.min.js",
 					   "js/ko.observableDictionary.js", "js/tasmota.js"],
-				'css': ["css/font-awesome.min.css", "css/font-awesome-v4-shims.min.css",
-						"css/fontawesome-iconpicker.css",
-						"css/tasmota.css"]}
+				'css': css}
 
 	##~~ TemplatePlugin mixin
 
@@ -358,7 +367,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 		# File Uploaded Event
 		if event == Events.UPLOAD and self._settings.get_boolean(["event_on_upload_monitoring"]):
-			if payload.get("print", False) or self._settings.get_boolean(["event_on_upload_monitoring_always"]):  # implemented in OctoPrint version 1.4.1
+			if payload.get("print", False) or self._settings.get_boolean(
+					["event_on_upload_monitoring_always"]):  # implemented in OctoPrint version 1.4.1
 				self._tasmota_logger.debug("File uploaded: %s. Turning enabled plugs on." % payload.get("name", ""))
 				self._tasmota_logger.debug("Clearing autostart.")
 				self._autostart_file = None
@@ -373,7 +383,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 							self._tasmota_logger.debug(
 								"power on successful for %s attempting connection in %s seconds" % (
 									plug["ip"], plug.get("autoConnectDelay", "0")))
-							if payload.get("path", False) and payload.get("target") == "local" and (payload.get("print", False) or self._settings.get_boolean(["event_on_upload_monitoring_start_print"])):
+							if payload.get("path", False) and payload.get("target") == "local" and (
+									payload.get("print", False) or self._settings.get_boolean(
+								["event_on_upload_monitoring_start_print"])):
 								if self._printer.is_ready():
 									self._printer.select_file(payload.get("path"), False, printAfterSelect=True)
 								else:
@@ -609,8 +621,11 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			if chk.upper() in ["ON", "1"]:
 				response = {"currentState": "on", "ip": plugip, "idx": plugidx, "energy_data": energy_data,
 							"sensor_data": sensor_data}
-				if self._settings.get_boolean(["powerOffWhenIdle"]) and plug["automaticShutdownEnabled"] and self._abort_timer is None and (self._idleTimer is None or not self._idleTimer.is_alive()):
-					self._tasmota_logger.debug("Starting idle timer since ON state was detected for %s:%s" % (plugip, plugidx))
+				if self._settings.get_boolean(["powerOffWhenIdle"]) and plug[
+					"automaticShutdownEnabled"] and self._abort_timer is None and (
+						self._idleTimer is None or not self._idleTimer.is_alive()):
+					self._tasmota_logger.debug(
+						"Starting idle timer since ON state was detected for %s:%s" % (plugip, plugidx))
 					self._reset_idle_timer()
 			elif chk.upper() in ["OFF", "0"]:
 				response = {"currentState": "off", "ip": plugip, "idx": plugidx, "energy_data": energy_data,
@@ -834,7 +849,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self._abort_timer = None
 			self._timeout_value = None
 		if command in ["TASMOTAIDLEON", "TASMOTAIDLEOFF"]:
-			self._plugin_manager.send_plugin_message(self._identifier, dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout", timeout_value=self._timeout_value))
+			self._plugin_manager.send_plugin_message(self._identifier,
+													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
+														  timeout_value=self._timeout_value))
 
 	##~~ Temperatures received hook
 
