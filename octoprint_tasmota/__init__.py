@@ -841,13 +841,34 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if command == 'TASMOTAIDLEON':
 			self.powerOffWhenIdle = True
 			self._reset_idle_timer()
-		if command == 'TASMOTAIDLEOFF':
+		elif command == 'TASMOTAIDLEOFF':
 			self.powerOffWhenIdle = False
 			self._stop_idle_timer()
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
 				self._abort_timer = None
 			self._timeout_value = None
+		elif command == 'TASMOTAON':
+			plugip, plugidx = parameters.split(" ")
+			self._tasmota_logger.debug("Received TASMOTAON command, attempting power on of %s:%s." % (plugip, plugidx))
+			plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
+			self._tasmota_logger.debug(plug)
+			if plug and plug["gcodeEnabled"]:
+				t = threading.Timer(int(plug["gcodeOnDelay"]), self.gcode_on, [plug])
+				t.daemon = True
+				t.start()
+			return None
+		elif command == 'TASMOTAOFF':
+			plugip, plugidx = parameters.split(" ")
+			self._tasmota_logger.debug("Received TASMOTAOFF command, attempting power off of %s:%s." % (plugip, plugidx))
+			plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
+			self._tasmota_logger.debug(plug)
+			if plug and plug["gcodeEnabled"]:
+				t = threading.Timer(int(plug["gcodeOffDelay"]), self.gcode_off, [plug])
+				t.daemon = True
+				t.start()
+			return None
+
 		if command in ["TASMOTAIDLEON", "TASMOTAIDLEOFF"]:
 			self._plugin_manager.send_plugin_message(self._identifier,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",
