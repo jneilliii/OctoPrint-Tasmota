@@ -148,7 +148,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_after_startup(self):
 		self._logger.info("Tasmota loaded!")
-		if self._settings.get_boolean(["polling_enabled"]) and self._settings.get_int(["polling_interval"]) > 0:
+		if self._settings.get_boolean(["polling_enabled"]) and self._settings.get_float(["polling_interval"]) > 0:
 			self.poll_status = RepeatedTimer(float(self._settings.get_float(["polling_interval"])) * 60,
 											 self.check_statuses)
 			self.poll_status.start()
