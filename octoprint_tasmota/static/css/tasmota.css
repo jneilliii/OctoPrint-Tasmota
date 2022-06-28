@@ -81,3 +81,29 @@ input[type="datetime-local"].alert-error {
 .navbar .nav > li > a.tasmota_button {
     float: left;
 }
+
+/* For popover */
+#navbar_plugin_tasmota div.popover {
+    width: auto !important;
+    max-width: 100em;
+}
+#navbar_plugin_tasmota div.popover table {
+    width: auto !important;
+    table-layout: auto !important;
+}
+#navbar_plugin_tasmota div.popover td {
+    width: auto !important;
+    white-space: nowrap;
+}
+#navbar_plugin_tasmota div.popover td:last-child {
+    padding-left: 1em;
+}
+#navbar_plugin_tasmota div.popover h3.popover-title {
+    white-space: nowrap;
+}
+#navbar_plugin_tasmota.hide_popover_content div.popover h3.popover-title {
+    border: none;
+}
+#navbar_plugin_tasmota.hide_popover_content div.popover div.popover-content {
+    display: none;
+}
