@@ -172,7 +172,6 @@ $(function() {
 
 		self.onAllBound = function() {
 			self.checkStatuses();
-			$('#navbar_plugin_tasmota').addClass('hide_popover_content');
 		};
 
 		self.onEventSettingsUpdated = function(payload) {
