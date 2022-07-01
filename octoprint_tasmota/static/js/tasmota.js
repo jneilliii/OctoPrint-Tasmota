@@ -406,9 +406,9 @@ $(function() {
 						}
 					}
 					tooltip += '</tbody></table>';
-					$('#navbar_plugin_tasmota').removeClass('hide_popover_content');
+					$(('#tasmota_button_link_'+data.ip+'_'+data.idx).replace(/[.:]/g,'_')).removeClass('hide_popover_content');
 				} else {
-					$('#navbar_plugin_tasmota').addClass('hide_popover_content');
+					$(('#tasmota_button_link_'+data.ip+'_'+data.idx).replace(/[.:]/g,'_')).addClass('hide_popover_content');
 				}
                 try {
                     self.arrSmartplugsTooltips.set(data.ip+'_'+data.idx, tooltip);
