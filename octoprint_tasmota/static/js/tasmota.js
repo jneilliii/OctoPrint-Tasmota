@@ -391,18 +391,25 @@ $(function() {
 					console.log('plug data:'+ko.toJSON(plug));
 				}
 
-				var tooltip = plug.label();
-				if(data.sensor_data) {
-					for(let k in data.sensor_data) {
-						tooltip += '<br>' + k + ': ' + data.sensor_data[k]
+
+				var tooltip = '';
+				if (data.sensor_data || data.energy_data) {
+					tooltip += '<table style="width: 100%"><thead></thead><tbody>';
+					if(data.sensor_data) {
+						for(let k in data.sensor_data) {
+							tooltip += '<tr><td>' + k + ':</td><td>' + data.sensor_data[k] + '</td></tr>';
+						}
 					}
-				}
-				if(data.energy_data) {
-					for(let k in data.energy_data) {
-						tooltip += '<br>' + k + ': ' + data.energy_data[k]
+					if(data.energy_data) {
+						for(let k in data.energy_data) {
+							tooltip += '<tr><td>' + k + ':</td><td>' + data.energy_data[k] + '</td></tr>';
+						}
 					}
+					tooltip += '</tbody></table>';
+					$(('#tasmota_button_link_'+data.ip+'_'+data.idx).replace(/[.:]/g,'_')).removeClass('hide_popover_content');
+				} else {
+					$(('#tasmota_button_link_'+data.ip+'_'+data.idx).replace(/[.:]/g,'_')).addClass('hide_popover_content');
 				}
-				//plug.label_extended = ko.observable(tooltip);
                 try {
                     self.arrSmartplugsTooltips.set(data.ip+'_'+data.idx, tooltip);
                 } catch (error) {

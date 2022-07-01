@@ -304,7 +304,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_template_configs(self):
 		return [
-			{'type': "navbar", 'custom_bindings': True},
+			{'type': "navbar", 'custom_bindings': True, 'classes': ["hide_popover_content"]},
 			{'type': "settings", 'custom_bindings': True},
 			{'type': "tab", 'custom_bindings': True},
 			{'type': "sidebar", 'icon': "plug", 'custom_bindings': True, 'data_bind': "visible: show_sidebar",
