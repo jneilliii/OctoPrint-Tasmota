@@ -232,14 +232,20 @@ $(function() {
 						}
 					}
 
+                    var background_color = ($('.tab-content').css('background-color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('.tab-content').css('background-color');
+                    var foreground_color = ($('.tab-content').css('color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('#tabs_content').css('color');
+
 					var layout = {
 						autosize: true,
 						showlegend: false,
 						/* legend: {"orientation": "h"}, */
 						xaxis: { type:"date", /* tickformat:"%H:%M:%S", */ automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true},
 						yaxis: { type:"linear", automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true },
-						margin: {l:35,r:30,b:0,t:20,pad:5}
-					}
+						margin: {l:35,r:30,b:0,t:20,pad:5},
+                        plot_bgcolor: background_color,
+                        paper_bgcolor: background_color,
+                        font: {color: foreground_color}
+					};
 
 					var options = {
 						showLink: false,
@@ -248,7 +254,7 @@ $(function() {
 						displayModeBar: false,
 						editable: false,
 						showTips: false
-					}
+					};
 
 					Plotly.react('tasmota_graph', traces, layout, options);
 				});
