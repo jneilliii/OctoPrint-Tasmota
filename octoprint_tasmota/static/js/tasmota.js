@@ -187,6 +187,34 @@ $(function() {
 			}
 		};
 
+        self.getDefaultBackground = function() {
+          // have to add to the document in order to use getComputedStyle
+          var div = document.createElement("div");
+          document.head.appendChild(div);
+          var bg = window.getComputedStyle(div).backgroundColor;
+          document.head.removeChild(div);
+          return bg;
+        };
+
+        self.getInheritedBackgroundColor = function(el) {
+          // get default style for current browser
+          if (!self.defaultStyle) {
+              self.defaultStyle = self.getDefaultBackground(); // typically "rgba(0, 0, 0, 0)"
+          }
+
+          // get computed color for el
+          var backgroundColor = window.getComputedStyle(el).backgroundColor;
+
+          // if we got a real value, return it
+          if (backgroundColor !== self.defaultStyle) return backgroundColor;
+
+          // if we've reached the top parent el without getting an explicit color, return default
+          if (!el.parentElement) return self.defaultStyle;
+
+          // otherwise, recurse and try again on parent element
+          return self.getInheritedBackgroundColor(el.parentElement);
+        };
+
 		self.plotEnergyData = function(){
 			$.ajax({
 			url: API_BASEURL + "plugin/tasmota",
@@ -232,7 +260,7 @@ $(function() {
 						}
 					}
 
-                    var background_color = ($('.tab-content').css('background-color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('.tab-content').css('background-color');
+                    var background_color = (self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota')) == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
                     var foreground_color = ($('.tab-content').css('color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('#tabs_content').css('color');
 
 					var layout = {
