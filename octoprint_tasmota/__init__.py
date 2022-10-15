@@ -148,8 +148,8 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_after_startup(self):
 		self._logger.info("Tasmota loaded!")
-		if self._settings.get_boolean(["polling_enabled"]) and self._settings.get_int(["polling_interval"]) > 0:
-			self.poll_status = RepeatedTimer(int(self._settings.get_int(["polling_interval"])) * 60,
+		if self._settings.get_boolean(["polling_enabled"]) and self._settings.get_float(["polling_interval"]) > 0:
+			self.poll_status = RepeatedTimer(float(self._settings.get_float(["polling_interval"])) * 60,
 											 self.check_statuses)
 			self.poll_status.start()
 
@@ -226,7 +226,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 				self.poll_status.cancel()
 
 			if new_polling_value:
-				self.poll_status = RepeatedTimer(int(self._settings.get(["pollingInterval"])) * 60, self.check_statuses)
+				self.poll_status = RepeatedTimer(self._settings.get_float(["pollingInterval"]) * 60, self.check_statuses)
 				self.poll_status.start()
 
 	def get_settings_version(self):
@@ -304,7 +304,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	def get_template_configs(self):
 		return [
-			{'type': "navbar", 'custom_bindings': True},
+			{'type': "navbar", 'custom_bindings': True, 'classes': ["hide_popover_content"]},
 			{'type': "settings", 'custom_bindings': True},
 			{'type': "tab", 'custom_bindings': True},
 			{'type': "sidebar", 'icon': "plug", 'custom_bindings': True, 'data_bind': "visible: show_sidebar",
@@ -841,13 +841,34 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		if command == 'TASMOTAIDLEON':
 			self.powerOffWhenIdle = True
 			self._reset_idle_timer()
-		if command == 'TASMOTAIDLEOFF':
+		elif command == 'TASMOTAIDLEOFF':
 			self.powerOffWhenIdle = False
 			self._stop_idle_timer()
 			if self._abort_timer is not None:
 				self._abort_timer.cancel()
 				self._abort_timer = None
 			self._timeout_value = None
+		elif command == 'TASMOTAON':
+			plugip, plugidx = parameters.split(" ")
+			self._tasmota_logger.debug("Received TASMOTAON command, attempting power on of %s:%s." % (plugip, plugidx))
+			plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
+			self._tasmota_logger.debug(plug)
+			if plug and plug["gcodeEnabled"]:
+				t = threading.Timer(int(plug["gcodeOnDelay"]), self.gcode_on, [plug])
+				t.daemon = True
+				t.start()
+			return None
+		elif command == 'TASMOTAOFF':
+			plugip, plugidx = parameters.split(" ")
+			self._tasmota_logger.debug("Received TASMOTAOFF command, attempting power off of %s:%s." % (plugip, plugidx))
+			plug = self.plug_search(self._settings.get(["arrSmartplugs"]), "ip", plugip, "idx", plugidx)
+			self._tasmota_logger.debug(plug)
+			if plug and plug["gcodeEnabled"]:
+				t = threading.Timer(int(plug["gcodeOffDelay"]), self.gcode_off, [plug])
+				t.daemon = True
+				t.start()
+			return None
+
 		if command in ["TASMOTAIDLEON", "TASMOTAIDLEOFF"]:
 			self._plugin_manager.send_plugin_message(self._identifier,
 													 dict(powerOffWhenIdle=self.powerOffWhenIdle, type="timeout",

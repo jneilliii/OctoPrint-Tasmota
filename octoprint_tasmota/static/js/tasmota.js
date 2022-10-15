@@ -187,6 +187,34 @@ $(function() {
 			}
 		};
 
+        self.getDefaultBackground = function() {
+          // have to add to the document in order to use getComputedStyle
+          var div = document.createElement("div");
+          document.head.appendChild(div);
+          var bg = window.getComputedStyle(div).backgroundColor;
+          document.head.removeChild(div);
+          return bg;
+        };
+
+        self.getInheritedBackgroundColor = function(el) {
+          // get default style for current browser
+          if (!self.defaultStyle) {
+              self.defaultStyle = self.getDefaultBackground(); // typically "rgba(0, 0, 0, 0)"
+          }
+
+          // get computed color for el
+          var backgroundColor = window.getComputedStyle(el).backgroundColor;
+
+          // if we got a real value, return it
+          if (backgroundColor !== self.defaultStyle) return backgroundColor;
+
+          // if we've reached the top parent el without getting an explicit color, return default
+          if (!el.parentElement) return self.defaultStyle;
+
+          // otherwise, recurse and try again on parent element
+          return self.getInheritedBackgroundColor(el.parentElement);
+        };
+
 		self.plotEnergyData = function(){
 			$.ajax({
 			url: API_BASEURL + "plugin/tasmota",
@@ -232,14 +260,20 @@ $(function() {
 						}
 					}
 
+                    var background_color = (self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota')) == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
+                    var foreground_color = ($('.tab-content').css('color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('#tabs_content').css('color');
+
 					var layout = {
 						autosize: true,
 						showlegend: false,
 						/* legend: {"orientation": "h"}, */
 						xaxis: { type:"date", /* tickformat:"%H:%M:%S", */ automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true},
 						yaxis: { type:"linear", automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true },
-						margin: {l:35,r:30,b:0,t:20,pad:5}
-					}
+						margin: {l:35,r:30,b:0,t:20,pad:5},
+                        plot_bgcolor: background_color,
+                        paper_bgcolor: background_color,
+                        font: {color: foreground_color}
+					};
 
 					var options = {
 						showLink: false,
@@ -248,7 +282,7 @@ $(function() {
 						displayModeBar: false,
 						editable: false,
 						showTips: false
-					}
+					};
 
 					Plotly.react('tasmota_graph', traces, layout, options);
 				});
@@ -391,18 +425,25 @@ $(function() {
 					console.log('plug data:'+ko.toJSON(plug));
 				}
 
-				var tooltip = plug.label();
-				if(data.sensor_data) {
-					for(let k in data.sensor_data) {
-						tooltip += '<br>' + k + ': ' + data.sensor_data[k]
+
+				var tooltip = '';
+				if (data.sensor_data || data.energy_data) {
+					tooltip += '<table style="width: 100%"><thead></thead><tbody>';
+					if(data.sensor_data) {
+						for(let k in data.sensor_data) {
+							tooltip += '<tr><td>' + k + ':</td><td>' + data.sensor_data[k] + '</td></tr>';
+						}
 					}
-				}
-				if(data.energy_data) {
-					for(let k in data.energy_data) {
-						tooltip += '<br>' + k + ': ' + data.energy_data[k]
+					if(data.energy_data) {
+						for(let k in data.energy_data) {
+							tooltip += '<tr><td>' + k + ':</td><td>' + data.energy_data[k] + '</td></tr>';
+						}
 					}
+					tooltip += '</tbody></table>';
+					$(('#tasmota_button_link_'+data.ip+'_'+data.idx).replace(/[.:]/g,'_')).removeClass('hide_popover_content');
+				} else {
+					$(('#tasmota_button_link_'+data.ip+'_'+data.idx).replace(/[.:]/g,'_')).addClass('hide_popover_content');
 				}
-				//plug.label_extended = ko.observable(tooltip);
                 try {
                     self.arrSmartplugsTooltips.set(data.ip+'_'+data.idx, tooltip);
                 } catch (error) {
