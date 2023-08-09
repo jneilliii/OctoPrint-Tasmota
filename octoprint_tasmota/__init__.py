@@ -171,6 +171,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			"powerOffWhenIdle": False,
 			"idleTimeout": 30,
 			"idleIgnoreCommands": 'M105',
+			"idleIgnoreHeaters": '',
 			"idleTimeoutWaitTemp": 50,
 			"idleWaitForTimelapse": True,
 			"event_on_upload_monitoring": False,
@@ -980,11 +981,12 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def _wait_for_heaters(self):
 		self._waitForHeaters = True
 		heaters = self._printer.get_current_temperatures()
+		ignored_heaters = self._settings.get(["idleIgnoreHeaters"]).split(',')
 
 		for heater, entry in heaters.items():
 			target = entry.get("target")
-			if target is None:
-				# heater doesn't exist in fw
+			if target is None or heater in ignored_heaters:
+				# heater doesn't exist in fw or set to be ignored
 				continue
 
 			try:
@@ -1010,7 +1012,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			highest_temp = 0
 			heaters_above_waittemp = []
 			for heater, entry in heaters.items():
-				if not heater.startswith("tool"):
+				if not heater.startswith("tool") or heater in ignored_heaters:
 					continue
 
 				actual = entry.get("actual")
