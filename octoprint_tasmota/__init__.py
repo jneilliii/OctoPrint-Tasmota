@@ -981,7 +981,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def _wait_for_heaters(self):
 		self._waitForHeaters = True
 		heaters = self._printer.get_current_temperatures()
-		ignored_heaters = self._settings.get(["idleIgnoreHeaters"]).split(',')
+		ignored_heaters = [heater.strip() for heater in self._settings.get(["idleIgnoreHeaters"]).split(',')]
 
 		for heater, entry in heaters.items():
 			target = entry.get("target")
