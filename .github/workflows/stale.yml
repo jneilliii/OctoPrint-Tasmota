@@ -23,3 +23,5 @@ jobs:
         exempt-issue-labels: 'bug,enhancement'
     - uses: actions/checkout@v4
     - uses: gautamkrishnar/keepalive-workflow@v2
+      with:
+        use_api: true
