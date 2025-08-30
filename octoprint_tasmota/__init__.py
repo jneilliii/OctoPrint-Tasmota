@@ -740,6 +740,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 													 {'powerOffWhenIdle': self.powerOffWhenIdle, 'type': "timeout",
 													  'timeout_value': self._timeout_value})
 
+	def is_api_protected(self):
+		return True
+
 	##~~ Gcode processing hook
 
 	def gcode_off(self, plug):
