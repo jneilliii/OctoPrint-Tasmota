@@ -17,6 +17,7 @@ $(function() {
 		self.arrSmartplugsStates = ko.observableDictionary({});
 		self.arrSmartplugsLEDColors = ko.observableDictionary({});
 		self.isPrinting = ko.observable(false);
+		self.processing_api_request = ko.observable(false);
 		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
 		self.selectedPlug = ko.observable();
@@ -216,6 +217,7 @@ $(function() {
         };
 
 		self.plotEnergyData = function(){
+		    self.processing_api_request(true);
 			$.ajax({
 			url: API_BASEURL + "plugin/tasmota",
 			type: "POST",
@@ -242,7 +244,7 @@ $(function() {
                             pattern: 'independent'
                         },
                         autosize: true,
-                        height: (data.sensor_data.length > 0 && data.energy_data.length > 0) ? 1200 : (data.energy_data.length > 0) ? 600 : (data.sensor_data.length > 0) ? 400 : 0,
+                        height: (data.sensor_data.length > 0 && data.energy_data.length > 0) ? 1800 : (data.energy_data.length > 0) ? 900 : (data.sensor_data.length > 0) ? 600 : 300,
                         showlegend: false,
                         /* legend: {"orientation": "h"}, */
                         xaxis: {
@@ -287,7 +289,6 @@ $(function() {
 						displayModeBar: false,
 						editable: false,
 						showTips: false,
-						responsive: true
 					};
 
 					if(data.sensor_data.length > 0 && data.energy_data.length == 0){ // sensor data only
@@ -319,8 +320,6 @@ $(function() {
                         layout.xaxis['range'] = [self.graph_start_date(), self.graph_end_date()];
                         console.log('no data to graph')
                     }
-
-                    console.log(layout);
 
 					for(var i=0;i<data.energy_data.length;i++){
 						for(var j=2;j<data.energy_data[i].length;j++){
@@ -355,7 +354,6 @@ $(function() {
 						}
 					}
 
-
 					for(var i=0;i<data.sensor_data.length;i++){
 						for(var j=2;j<data.sensor_data[i].length;j++){
 							var trace = {mode: 'lines'};
@@ -381,6 +379,7 @@ $(function() {
 					}
 
 					Plotly.react('tasmota_graph', traces, layout, options);
+					self.processing_api_request(false);
 				});
 		};
 
