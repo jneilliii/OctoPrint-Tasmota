@@ -232,6 +232,9 @@ $(function() {
 					var sensor_labels = [0,0,'Temperature','Humidity'];
 					var traces = [];
 
+					var background_color = (self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota')) == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
+                    var foreground_color = ($('#tab_plugin_tasmota').css('color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('#tab_plugin_tasmota').css('color');
+
 					var layout = {
                         grid: {
                             rows: (data.sensor_data.length > 0 && data.energy_data.length > 0) ? 6 : (data.energy_data.length > 0) ? 4 : (data.sensor_data.length > 0) ? 2 : 1,
@@ -245,23 +248,28 @@ $(function() {
                         xaxis: {
                             type: "date", /* tickformat:"%H:%M:%S", */ automargin: true,
                             mirror: true,
-                            showticklabels: false,
                             anchor: 'x',
+							tickcolor: foreground_color,
+							linecolor: foreground_color,
+							color: foreground_color
                         },
                         yaxis: {
                             automargin: true,
-                            title: '',
+                            title: {text: 'No Data'},
                             hoverformat: '.3f',
                             anchor:'x',
                             tickangle:-45,
                             tickformat:'.1f',
                             mirror:true,
-                            rangemode: 'nonnegative'
+                            rangemode: 'nonnegative',
+							tickcolor: foreground_color,
+							linecolor: foreground_color,
+							color: foreground_color
                         },
                         margin: {
                             l: 35,
                             r: 30,
-                            b: 0,
+                            b: 20,
                             t: 20,
                             pad: 5
                         },
@@ -279,36 +287,40 @@ $(function() {
 						displayModeBar: false,
 						editable: false,
 						showTips: false,
+						responsive: true
 					};
 
 					if(data.sensor_data.length > 0 && data.energy_data.length == 0){ // sensor data only
-                        layout.yaxis.title = 'Temperature';
-                        layout['xaxis2'] = {automargin: true, anchor: 'y2', showticklabels: true, mirror: true, matches: 'x'/*, overlaying: 'x',*/}
-                        layout['yaxis2'] = {automargin:true, title:'Humidity', hoverformat:'.3f', anchor:'x2', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative'}
+                        layout.yaxis.title.text = 'Temperature';
+                        layout['xaxis2'] = {automargin: true, anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color/*, overlaying: 'x',*/}
+                        layout['yaxis2'] = {automargin:true, title: {text: 'Humidity'}, hoverformat:'.3f', anchor:'x2', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
                     } else if(data.sensor_data.length == 0 && data.energy_data.length > 0){ // power data only
-                        layout.yaxis.title = 'Total';
-                        layout['xaxis2'] = {anchor: 'y2', mirror: true, showticklabels: false, matches: 'x'};
-                        layout['yaxis2'] = {automargin: true, title: 'Current', hoverformat: '.3f', anchor: 'x2', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative'};
-                        layout['xaxis3'] = {anchor: 'y3', showticklabels: false, mirror: true, matches: 'x'};
-                        layout['yaxis3'] = {automargin: true, title: 'Power', hoverformat: '.3f', anchor: 'x3', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative'};
-                        layout['xaxis4'] = {anchor: 'y4', showticklabels: true, mirror: true, matches: 'x'};
-                        layout['yaxis4'] = {automargin: true, title: 'Cost', hoverformat: '.3f', anchor: 'x4', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative'};
+                        layout.yaxis.title.text = 'Total';
+                        layout['xaxis2'] = {anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis2'] = {automargin: true, title: {text: 'Current'}, hoverformat: '.3f', anchor: 'x2', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis3'] = {anchor: 'y3', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis3'] = {automargin: true, title: {text: 'Power'}, hoverformat: '.3f', anchor: 'x3', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis4'] = {anchor: 'y4', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis4'] = {automargin: true, title: {text: 'Cost'}, hoverformat: '.3f', anchor: 'x4', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
                     } else if(data.sensor_data.length > 0 && data.energy_data.length > 0) { // sensor and power data
-                        layout.yaxis.title = 'Total';
-                        layout['xaxis2'] = {anchor: 'y2', mirror: true, showticklabels: false, matches: 'x'};
-                        layout['yaxis2'] = {automargin: true, title: 'Current', hoverformat: '.3f', anchor: 'x2', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative'};
-                        layout['xaxis3'] = {anchor: 'y3', showticklabels: false, mirror: true, matches: 'x'};
-                        layout['yaxis3'] = {automargin: true, title: 'Power', hoverformat: '.3f', anchor: 'x3', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative'};
-                        layout['xaxis4'] = {anchor: 'y4', showticklabels: true, mirror: true, matches: 'x'};
-                        layout['yaxis4'] = {automargin: true, title: 'Cost', hoverformat: '.3f', anchor: 'x4', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative'};
-                        layout['xaxis5'] = {anchor: 'y5', showticklabels: false, mirror: true, matches: 'x'/*, overlaying: 'x',*/}
-                        layout['yaxis5'] = {automargin:true, title:'Temperature', hoverformat:'.3f', anchor:'x5', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative'}
-                        layout['xaxis6'] = {anchor: 'y6', showticklabels: true, mirror: true, matches: 'x'/*, overlaying: 'x',*/}
-                        layout['yaxis6'] = {automargin:true, title:'Humidity', hoverformat:'.3f', anchor:'x6', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative'}
+                        layout.yaxis.title.text = 'Total';
+                        layout['xaxis2'] = {anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis2'] = {automargin: true, title: {text: 'Current'}, hoverformat: '.3f', anchor: 'x2', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis3'] = {anchor: 'y3', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis3'] = {automargin: true, title: {text: 'Power'}, hoverformat: '.3f', anchor: 'x3', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis4'] = {anchor: 'y4', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis4'] = {automargin: true, title: {text: 'Cost'}, hoverformat: '.3f', anchor: 'x4', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis5'] = {anchor: 'y5', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color/*, overlaying: 'x',*/}
+                        layout['yaxis5'] = {automargin:true, title: {text: 'Temperature'}, hoverformat:'.3f', anchor:'x5', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
+                        layout['xaxis6'] = {anchor: 'y6', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color/*, overlaying: 'x',*/}
+                        layout['yaxis6'] = {automargin:true, title: {text: 'Humidity'}, hoverformat:'.3f', anchor:'x6', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
                     } else { // no data
                         layout['annotations'] = [{text: 'No Data', xref: 'x domain', yref: 'y domain', x: 0.5, y: 0.5, showarrow: false, font: { size: 16 }}];
+                        layout.xaxis['range'] = [self.graph_start_date(), self.graph_end_date()];
                         console.log('no data to graph')
                     }
+
+                    console.log(layout);
 
 					for(var i=0;i<data.energy_data.length;i++){
 						for(var j=2;j<data.energy_data[i].length;j++){
@@ -367,9 +379,6 @@ $(function() {
 							traces.push(trace);
 						}
 					}
-
-                    var background_color = (self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota')) == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
-                    var foreground_color = ($('.tab-content').css('color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('#tabs_content').css('color');
 
 					Plotly.react('tasmota_graph', traces, layout, options);
 				});
