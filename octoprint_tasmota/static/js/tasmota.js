@@ -294,7 +294,7 @@ $(function() {
 
 					if(data.sensor_data.length > 0 && data.energy_data.length == 0){ // sensor data only
                         layout.yaxis.title.text = 'Temperature';
-                        layout['xaxis2'] = {automargin: true, anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color/*, overlaying: 'x',*/}
+                        layout['xaxis2'] = {automargin: true, anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
                         layout['yaxis2'] = {automargin:true, title: {text: 'Humidity'}, hoverformat:'.3f', anchor:'x2', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
                     } else if(data.sensor_data.length == 0 && data.energy_data.length > 0){ // power data only
                         layout.yaxis.title.text = 'Total';
