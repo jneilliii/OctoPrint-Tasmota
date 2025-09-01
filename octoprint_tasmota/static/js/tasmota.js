@@ -350,7 +350,7 @@ $(function() {
                                     traces.push(trace_cost);
 							        break;
 							    default:
-							        console.log('unknown energy data column' + data.energy_data[i])
+							        console.log('unknown energy data column ' + data.energy_data[i])
 							    }
 							traces.push(trace);
 						}
@@ -373,7 +373,7 @@ $(function() {
 							        trace['yaxis'] = (data.energy_data.length > 0) ? 'y6' : 'y2';
 							        break;
 						        default:
-						            console.log('unknown sensor data column' + data.sensor_data[i])
+						            console.log('unknown sensor data column ' + data.sensor_data[i])
 						    }
 
 							traces.push(trace);
