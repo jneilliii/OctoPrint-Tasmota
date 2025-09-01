@@ -235,7 +235,8 @@ $(function() {
 					var traces = [];
 
 					var background_color = (self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota')) == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
-                    var foreground_color = ($('#tab_plugin_tasmota').css('color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('#tab_plugin_tasmota').css('color');
+                    var color_val = $('#tab_plugin_tasmota').css('color');
+                    var foreground_color = (!color_val || color_val === 'inherit' || color_val === 'transparent') ? '#FFFFFF' : color_val;
 
 					var layout = {
                         grid: {
