@@ -312,9 +312,9 @@ $(function() {
                         layout['yaxis3'] = {automargin: true, title: {text: 'Power'}, hoverformat: '.3f', anchor: 'x3', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
                         layout['xaxis4'] = {anchor: 'y4', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
                         layout['yaxis4'] = {automargin: true, title: {text: 'Cost'}, hoverformat: '.3f', anchor: 'x4', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
-                        layout['xaxis5'] = {anchor: 'y5', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color/*, overlaying: 'x',*/}
+                        layout['xaxis5'] = {anchor: 'y5', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
                         layout['yaxis5'] = {automargin:true, title: {text: 'Temperature'}, hoverformat:'.3f', anchor:'x5', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
-                        layout['xaxis6'] = {anchor: 'y6', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color/*, overlaying: 'x',*/}
+                        layout['xaxis6'] = {anchor: 'y6', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
                         layout['yaxis6'] = {automargin:true, title: {text: 'Humidity'}, hoverformat:'.3f', anchor:'x6', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
                     } else { // no data
                         layout['annotations'] = [{text: 'No Data', xref: 'x domain', yref: 'y domain', x: 0.5, y: 0.5, showarrow: false, font: { size: 16 }}];
