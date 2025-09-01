@@ -381,7 +381,9 @@ $(function() {
 					}
 
 					Plotly.react('tasmota_graph', traces, layout, options);
-
+					self.processing_api_request(false);
+				}).fail(function(){
+					self.processing_api_request(false);
 				});
 		};
 
