@@ -237,7 +237,7 @@ $(function() {
 					var inherited_bg_color = self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
 					var background_color = (inherited_bg_color == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : inherited_bg_color;
                     var color_val = $('#tab_plugin_tasmota').css('color');
-                    var foreground_color = (!color_val || color_val === 'inherit' || color_val === 'transparent') ? '#FFFFFF' : color_val;
+                    var foreground_color = (!color_val || color_val === 'inherit' || color_val === 'transparent') ? '#000000' : color_val;
 
 					var layout = {
                         grid: {
