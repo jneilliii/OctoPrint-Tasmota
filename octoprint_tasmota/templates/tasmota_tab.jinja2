@@ -20,7 +20,7 @@
 	<div class="span2">
 		<div class="controls">
 			<label class="control-label">&nbsp;</label>
-			<button class="btn btn-primary" data-bind="click: plotEnergyData, disable: graph_end_date() <= graph_start_date()">Update</button>
+			<button class="btn btn-primary" data-bind="click: plotEnergyData, disable: graph_end_date() <= graph_start_date() || processing_api_request"><i class="fa fa-spinner fa-spin" data-bind="visible: processing_api_request" style="display: none;"></i> Update</button>
 		</div>
 	</div>
 </div>

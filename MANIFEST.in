@@ -2,3 +2,6 @@ include README.md
 recursive-include octoprint_tplinksmartplug/templates *
 recursive-include octoprint_tplinksmartplug/translations *
 recursive-include octoprint_tplinksmartplug/static *
+recursive-include octoprint_tasmota/templates *
+recursive-include octoprint_tasmota/translations *
+recursive-include octoprint_tasmota/static *

@@ -303,6 +303,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 
 	##~~ TemplatePlugin mixin
 
+	def is_template_autoescaped(self):
+		return True
+
 	def get_template_configs(self):
 		return [
 			{'type': "navbar", 'custom_bindings': True, 'classes': ["hide_popover_content"]},
@@ -393,7 +396,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 									self._autostart_file = payload.get("path")
 
 		# Print Started Event
-		if event == Events.PRINT_STARTED and self._settings.getFloat(["cost_rate"]) > 0:
+		if event == Events.PRINT_STARTED and self._settings.get_float(["cost_rate"]) > 0:
 			self.print_job_started = True
 			self._tasmota_logger.debug(payload.get("path", None))
 			if self.thermal_runaway_triggered:
@@ -434,7 +437,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug("hours: %s" % hours)
 			power_used = self.print_job_power * hours
 			self._tasmota_logger.debug("power used: %s" % power_used)
-			power_cost = power_used * self._settings.getFloat(["cost_rate"])
+			power_cost = power_used * self._settings.get_float(["cost_rate"])
 			self._tasmota_logger.debug("power total cost: %s" % power_cost)
 
 			self._storage_interface = self._file_manager._storage(payload.get("origin", "local"))
@@ -739,6 +742,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._plugin_manager.send_plugin_message(self._identifier,
 													 {'powerOffWhenIdle': self.powerOffWhenIdle, 'type': "timeout",
 													  'timeout_value': self._timeout_value})
+
+	def is_api_protected(self):
+		return True
 
 	##~~ Gcode processing hook
 

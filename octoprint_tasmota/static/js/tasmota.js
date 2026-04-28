@@ -17,6 +17,7 @@ $(function() {
 		self.arrSmartplugsStates = ko.observableDictionary({});
 		self.arrSmartplugsLEDColors = ko.observableDictionary({});
 		self.isPrinting = ko.observable(false);
+		self.processing_api_request = ko.observable(false);
 		self.gcodeOnString = function(data){return 'M80 '+data.ip()+' '+data.idx();};
 		self.gcodeOffString = function(data){return 'M81 '+data.ip()+' '+data.idx();};
 		self.selectedPlug = ko.observable();
@@ -216,6 +217,7 @@ $(function() {
         };
 
 		self.plotEnergyData = function(){
+		    self.processing_api_request(true);
 			$.ajax({
 			url: API_BASEURL + "plugin/tasmota",
 			type: "POST",
@@ -227,53 +229,60 @@ $(function() {
 			}),
 			contentType: "application/json; charset=UTF-8"
 			}).done(function(data){
-					console.log(data);
 					//update plotly graph here.
 					var energy_labels = [0,0,'Current','Power','Total'];
 					var sensor_labels = [0,0,'Temperature','Humidity'];
 					var traces = [];
-					for(var i=0;i<data.energy_data.length;i++){
-						for(var j=2;j<data.energy_data[i].length;j++){
-							var trace = {mode: 'lines'};
-							var trace_cost = {x:[],y:[],mode:'lines',name:data.energy_data[i][0] + ' Cost'};
-							trace['name'] = data.energy_data[i][0] + ' ' + energy_labels[j];
-							trace['x'] = data.energy_data[i][1].split(',');
-							trace['y'] = data.energy_data[i][j].split(',');
-							traces.push(trace);
-							if(j == 4){
-							    trace_cost['x'] = data.energy_data[i][1].split(',');
-							    var trace_cost_y = data.energy_data[i][j].split(',');
-							    for(var k=0;k<trace_cost_y.length;k++){
-							        trace_cost['y'].push((parseFloat(trace_cost_y[k]) * parseFloat(self.settings.settings.plugins.tasmota.cost_rate())));
-                                }
-							    traces.push(trace_cost);
-                            }
-						}
-					}
-					for(var i=0;i<data.sensor_data.length;i++){
-						for(var j=2;j<data.sensor_data[i].length;j++){
-							var trace = {mode: 'lines'};
-							trace['name'] = data.sensor_data[i][0] + ' ' + sensor_labels[j];
-							trace['x'] = data.sensor_data[i][1].split(',');
-							trace['y'] = data.sensor_data[i][j].split(',');
-							traces.push(trace);
-						}
-					}
 
-                    var background_color = (self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota')) == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
-                    var foreground_color = ($('.tab-content').css('color') == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : $('#tabs_content').css('color');
+					var inherited_bg_color = self.getInheritedBackgroundColor(document.getElementById('tab_plugin_tasmota'));
+					var background_color = (inherited_bg_color == 'rgba(0, 0, 0, 0)') ? '#FFFFFF' : inherited_bg_color;
+                    var color_val = $('#tab_plugin_tasmota').css('color');
+                    var foreground_color = (!color_val || color_val === 'inherit' || color_val === 'transparent') ? '#000000' : color_val;
 
 					var layout = {
-						autosize: true,
-						showlegend: false,
-						/* legend: {"orientation": "h"}, */
-						xaxis: { type:"date", /* tickformat:"%H:%M:%S", */ automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true},
-						yaxis: { type:"linear", automargin: true, title: {standoff: 0},linecolor: 'black', linewidth: 2, mirror: true },
-						margin: {l:35,r:30,b:0,t:20,pad:5},
+                        grid: {
+                            rows: (data.sensor_data.length > 0 && data.energy_data.length > 0) ? 6 : (data.energy_data.length > 0) ? 4 : (data.sensor_data.length > 0) ? 2 : 1,
+                            columns: 1,
+                            pattern: 'independent'
+                        },
+                        autosize: true,
+                        height: (data.sensor_data.length > 0 && data.energy_data.length > 0) ? 1800 : (data.energy_data.length > 0) ? 900 : (data.sensor_data.length > 0) ? 600 : 300,
+                        showlegend: false,
+                        /* legend: {"orientation": "h"}, */
+                        xaxis: {
+                            type: "date", /* tickformat:"%H:%M:%S", */ automargin: true,
+                            mirror: true,
+                            anchor: 'x',
+							tickcolor: foreground_color,
+							linecolor: foreground_color,
+							color: foreground_color
+                        },
+                        yaxis: {
+                            automargin: true,
+                            title: {text: 'No Data'},
+                            hoverformat: '.3f',
+                            anchor:'x',
+                            tickangle:-45,
+                            tickformat:'.1f',
+                            mirror:true,
+                            rangemode: 'nonnegative',
+							tickcolor: foreground_color,
+							linecolor: foreground_color,
+							color: foreground_color
+                        },
+                        margin: {
+                            l: 35,
+                            r: 30,
+                            b: 20,
+                            t: 20,
+                            pad: 5
+                        },
                         plot_bgcolor: background_color,
                         paper_bgcolor: background_color,
-                        font: {color: foreground_color}
-					};
+                        font: {
+                            color: foreground_color
+                        }
+                    };
 
 					var options = {
 						showLink: false,
@@ -281,10 +290,100 @@ $(function() {
 						displaylogo: false,
 						displayModeBar: false,
 						editable: false,
-						showTips: false
+						showTips: false,
 					};
 
+					if(data.sensor_data.length > 0 && data.energy_data.length == 0){ // sensor data only
+                        layout.yaxis.title.text = 'Temperature';
+                        layout['xaxis2'] = {automargin: true, anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
+                        layout['yaxis2'] = {automargin:true, title: {text: 'Humidity'}, hoverformat:'.3f', anchor:'x2', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
+                    } else if(data.sensor_data.length == 0 && data.energy_data.length > 0){ // power data only
+                        layout.yaxis.title.text = 'Total';
+                        layout['xaxis2'] = {anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis2'] = {automargin: true, title: {text: 'Current'}, hoverformat: '.3f', anchor: 'x2', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis3'] = {anchor: 'y3', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis3'] = {automargin: true, title: {text: 'Power'}, hoverformat: '.3f', anchor: 'x3', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis4'] = {anchor: 'y4', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis4'] = {automargin: true, title: {text: 'Cost'}, hoverformat: '.3f', anchor: 'x4', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                    } else if(data.sensor_data.length > 0 && data.energy_data.length > 0) { // sensor and power data
+                        layout.yaxis.title.text = 'Total';
+                        layout['xaxis2'] = {anchor: 'y2', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis2'] = {automargin: true, title: {text: 'Current'}, hoverformat: '.3f', anchor: 'x2', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis3'] = {anchor: 'y3', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis3'] = {automargin: true, title: {text: 'Power'}, hoverformat: '.3f', anchor: 'x3', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis4'] = {anchor: 'y4', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['yaxis4'] = {automargin: true, title: {text: 'Cost'}, hoverformat: '.3f', anchor: 'x4', tickangle: -45, tickformat: '.1f', mirror: true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color};
+                        layout['xaxis5'] = {anchor: 'y5', mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
+                        layout['yaxis5'] = {automargin:true, title: {text: 'Temperature'}, hoverformat:'.3f', anchor:'x5', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
+                        layout['xaxis6'] = {anchor: 'y6', showticklabels: true, mirror: true, matches: 'x', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
+                        layout['yaxis6'] = {automargin:true, title: {text: 'Humidity'}, hoverformat:'.3f', anchor:'x6', tickangle:-45, tickformat:'.1f', mirror:true, rangemode: 'nonnegative', tickcolor: foreground_color, linecolor: foreground_color, color: foreground_color}
+                    } else { // no data
+                        layout['annotations'] = [{text: 'No Data', xref: 'x domain', yref: 'y domain', x: 0.5, y: 0.5, showarrow: false, font: { size: 16 }}];
+                        layout.xaxis['range'] = [self.graph_start_date(), self.graph_end_date()];
+                        console.log('no data to graph')
+                    }
+
+					for(var i=0;i<data.energy_data.length;i++){
+						for(var j=2;j<data.energy_data[i].length;j++){
+							var trace = {mode: 'lines'};
+							var trace_cost = {x:[],y:[],mode:'lines',name:data.energy_data[i][0] + ' Cost', xaxis:'x4', yaxis:'y4'};
+							trace['name'] = data.energy_data[i][0] + ' ' + energy_labels[j];
+							trace['x'] = data.energy_data[i][1].split(',');
+							trace['y'] = data.energy_data[i][j].split(',');
+							switch (j) {
+							    case 2: // current
+							        trace['xaxis'] = 'x3';
+							        trace['yaxis'] = 'y3';
+							        break;
+							    case 3: // power
+							        trace['xaxis'] = 'x2';
+							        trace['yaxis'] = 'y2';
+							        break;
+							    case 4: // total
+							        trace['xaxis'] = 'x';
+							        trace['yaxis'] = 'y';
+                                    trace_cost['x'] = data.energy_data[i][1].split(',');
+                                    var trace_cost_y = data.energy_data[i][j].split(',');
+                                    for(var k=0;k<trace_cost_y.length;k++){
+                                        trace_cost['y'].push((parseFloat(trace_cost_y[k]) * parseFloat(self.settings.settings.plugins.tasmota.cost_rate())));
+                                    }
+                                    traces.push(trace_cost);
+							        break;
+							    default:
+							        console.log('unknown energy data column ' + data.energy_data[i])
+							    }
+							traces.push(trace);
+						}
+					}
+
+					for(var i=0;i<data.sensor_data.length;i++){
+						for(var j=2;j<data.sensor_data[i].length;j++){
+							var trace = {mode: 'lines'};
+							trace['name'] = data.sensor_data[i][0] + ' ' + sensor_labels[j];
+							trace['x'] = data.sensor_data[i][1].split(',');
+							trace['y'] = data.sensor_data[i][j].split(',');
+
+						    switch(j) {
+						        case 2:
+						            trace['xaxis'] = (data.energy_data.length > 0) ? 'x5' : 'x';
+							        trace['yaxis'] = (data.energy_data.length > 0) ? 'y5' : 'y';
+							        break;
+                                case 3:
+						            trace['xaxis'] = (data.energy_data.length > 0) ? 'x6' : 'x2';
+							        trace['yaxis'] = (data.energy_data.length > 0) ? 'y6' : 'y2';
+							        break;
+						        default:
+						            console.log('unknown sensor data column ' + data.sensor_data[i])
+						    }
+
+							traces.push(trace);
+						}
+					}
+
 					Plotly.react('tasmota_graph', traces, layout, options);
+					self.processing_api_request(false);
+				}).fail(function(){
+					self.processing_api_request(false);
 				});
 		};
 
