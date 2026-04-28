@@ -1,0 +1,45 @@
+[build-system]
+requires = [
+    "setuptools>=68",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "OctoPrint-Tasmota"
+version = "1.1.5"
+description = "Simple plugin to control sonoff devices that have been flashed with Tasmota."
+authors = [
+    { name = "jneilliii", email = "jneilliii+github@gmail.com" },
+]
+requires-python = ">=3.7,<4"
+dependencies = [
+    "requests",
+    "uptime",
+]
+dynamic = [
+    "license",
+]
+
+[project.entry-points."octoprint.plugin"]
+tasmota = "octoprint_tasmota"
+
+[project.urls]
+Homepage = "https://github.com/jneilliii/OctoPrint-Tasmota"
+
+[project.optional-dependencies]
+develop = [
+    "go-task-bin",
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = [
+    "octoprint_tasmota",
+    "octoprint_tasmota.*",
+]
