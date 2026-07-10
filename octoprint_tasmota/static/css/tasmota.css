@@ -107,3 +107,25 @@ input[type="datetime-local"].alert-error {
 #navbar_plugin_tasmota a.hide_popover_content + div.popover > div.popover-content {
     display: none;
 }
+
+/* Themeify (dark themes) leaves Bootstrap popovers with their default white
+   background, which is hard to read. Scope to html.themeify so instances
+   without Themeify keep the stock Bootstrap look. */
+html.themeify #navbar_plugin_tasmota div.popover {
+    background-color: #2f3136;
+    color: #dadadc;
+    border-color: #202225;
+}
+html.themeify #navbar_plugin_tasmota div.popover h3.popover-title {
+    background-color: #36393f;
+    color: #fff;
+    border-bottom-color: #202225;
+}
+html.themeify #navbar_plugin_tasmota div.popover div.popover-content {
+    color: #dadadc;
+}
+html.themeify #navbar_plugin_tasmota div.popover .arrow,
+html.themeify #navbar_plugin_tasmota div.popover .arrow:after {
+    border-bottom-color: #2f3136;
+    border-top-color: #2f3136;
+}
