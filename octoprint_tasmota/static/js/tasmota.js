@@ -11,6 +11,7 @@ $(function() {
 		self.settings = parameters[0];
 		self.loginState = parameters[1];
 		self.filesViewModel = parameters[2];
+        self.accessViewModel = parameters[3];
 
 		self.arrSmartplugs = ko.observableArray();
 		self.arrSmartplugsTooltips = ko.observableDictionary({});
@@ -40,8 +41,12 @@ $(function() {
 					});
 		});
 
+        self.show_ui_elements = ko.pureComputed(function(){
+            return self.loginState.hasPermission(self.accessViewModel.permissions.PLUGIN_TASMOTA_VIEW);
+        });
+
 		self.show_sidebar = ko.pureComputed(function(){
-			return self.filteredSmartplugs().length > 0;
+			return self.filteredSmartplugs().length > 0 && self.show_ui_elements();
 		});
 
 		self.toggleShutdownTitle = ko.pureComputed(function() {
@@ -165,10 +170,7 @@ $(function() {
 
 		self.onBeforeBinding = function() {
 			self.arrSmartplugs(self.settings.settings.plugins.tasmota.arrSmartplugs());
-            if($('html').attr('id') === 'touch') {
-                // $('#sidebar_plugin_tasmota_wrapper > div.accordion-heading > div').appendTo('#sidebar_plugin_tasmota');
-
-            }
+            $('li#tab_plugin_tasmota_link a').attr('data-bind', 'visible: show_ui_elements');
 		};
 
 		self.onAllBound = function() {
@@ -217,18 +219,12 @@ $(function() {
         };
 
 		self.plotEnergyData = function(){
+            if(!self.show_ui_elements()) {
+                return;
+            }
 		    self.processing_api_request(true);
-			$.ajax({
-			url: API_BASEURL + "plugin/tasmota",
-			type: "POST",
-			dataType: "json",
-			data: JSON.stringify({
-				command: "getEnergyData",
-				start_date: self.graph_start_date().replace('T', ' '),
-				end_date: self.graph_end_date().replace('T', ' ')
-			}),
-			contentType: "application/json; charset=UTF-8"
-			}).done(function(data){
+			OctoPrint.simpleApiGet("tasmota", {data: {getEnergyData: true, start_date: self.graph_start_date().replace('T', ' '), end_date: self.graph_end_date().replace('T', ' ')}})
+			    .done(function(data){
 					//update plotly graph here.
 					var energy_labels = [0,0,'Current','Power','Total'];
 					var sensor_labels = [0,0,'Temperature','Humidity'];
@@ -572,7 +568,7 @@ $(function() {
 		};
 
 		self.toggleRelay = function(data) {
-            if(data.is_sensor_only()){
+            if(data.is_sensor_only() || !self.loginState.hasPermission(self.accessViewModel.permissions.PLUGIN_TASMOTA_CONTROL)){
                 return
             }
 			self.processing.push(data.ip());
@@ -685,17 +681,11 @@ $(function() {
 		};
 
 		self.checkStatus = function(data) {
-			$.ajax({
-				url: API_BASEURL + "plugin/tasmota",
-				type: "POST",
-				dataType: "json",
-				data: JSON.stringify({
-					command: "checkStatus",
-					ip: data.ip(),
-					idx: data.idx()
-				}),
-				contentType: "application/json; charset=UTF-8"
-			});
+            if(self.show_ui_elements()) {
+                OctoPrint.simpleApiGet("tasmota", {data: {checkStatus: true, ip: data.ip(), idx: data.idx()}});
+            } else {
+                console.log("you don't have the necessary tasmota VIEW permission.");
+            }
 		};
 
 		self.checkStatuses = function() {
@@ -713,7 +703,7 @@ $(function() {
 	// view model class, parameters for constructor, container to bind to
 	OCTOPRINT_VIEWMODELS.push([
 		tasmotaViewModel,
-		["settingsViewModel","loginStateViewModel","filesViewModel"],
-		["#navbar_plugin_tasmota","#settings_plugin_tasmota","#tab_plugin_tasmota","#sidebar_plugin_tasmota_wrapper"]
+		["settingsViewModel","loginStateViewModel","filesViewModel", "accessViewModel"],
+		["#navbar_plugin_tasmota","#settings_plugin_tasmota","#tab_plugin_tasmota","#tab_plugin_tasmota_link","#sidebar_plugin_tasmota_wrapper"]
 	]);
 });

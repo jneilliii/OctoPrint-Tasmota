@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 import octoprint.plugin
-from octoprint.access.permissions import Permissions, ADMIN_GROUP
+from octoprint.access.permissions import Permissions, ADMIN_GROUP, USER_GROUP
 from octoprint.util import RepeatedTimer
 from octoprint.events import Events
 from flask_babel import gettext
@@ -310,7 +310,7 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		return [
 			{'type': "navbar", 'custom_bindings': True, 'classes': ["hide_popover_content"]},
 			{'type': "settings", 'custom_bindings': True},
-			{'type': "tab", 'custom_bindings': True},
+			{'type': "tab", 'custom_bindings': True, 'data_bind': "visible: show_ui_elements"},
 			{'type': "sidebar", 'icon': "plug", 'custom_bindings': True, 'data_bind': "visible: show_sidebar",
 			 'template': "tasmota_sidebar.jinja2", 'template_header': "tasmota_sidebar_header.jinja2"}
 		]
@@ -659,9 +659,9 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		return response
 
 	def get_api_commands(self):
-		return {'turnOn': ["ip", "idx"], 'turnOff': ["ip", "idx"], 'checkStatus': ["ip", "idx"], 'getEnergyData': [],
-				'checkSetOption26': ["ip", "username", "password"], 'setSetOption26': ["ip", "username", "password"],
-				'enableAutomaticShutdown': [], 'disableAutomaticShutdown': [], 'abortAutomaticShutdown': []}
+		return {'turnOn': ["ip", "idx"], 'turnOff': ["ip", "idx"], 'checkSetOption26': ["ip", "username", "password"],
+				'setSetOption26': ["ip", "username", "password"], 'enableAutomaticShutdown': [],
+				'disableAutomaticShutdown': [], 'abortAutomaticShutdown': []}
 
 	def on_api_command(self, command, data):
 		self._tasmota_logger.debug(data)
@@ -674,9 +674,6 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		elif command == 'turnOff':
 			self.turn_off("{ip}".format(**data), "{idx}".format(**data))
 		# return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
-
-		elif command == 'checkStatus':
-			return flask.jsonify(self.check_status("{ip}".format(**data), "{idx}".format(**data)))
 		elif command == 'checkSetOption26':
 			response = self.checkSetOption26("{ip}".format(**data), "{username}".format(**data),
 											 "{password}".format(**data))
@@ -705,17 +702,27 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			self._tasmota_logger.debug("Power off aborted.")
 			self._tasmota_logger.debug("Restarting idle timer.")
 			self._reset_idle_timer()
-		elif command == 'getEnergyData':
-			self._logger.info(data)
+
+		if command == "enableAutomaticShutdown" or command == "disableAutomaticShutdown":
+			self._tasmota_logger.debug("Automatic power off setting changed: %s" % self.powerOffWhenIdle)
+			self._settings.set_boolean(["powerOffWhenIdle"], self.powerOffWhenIdle)
+			self._settings.save()
+		# eventManager().fire(Events.SETTINGS_UPDATED)
+		if command == "enableAutomaticShutdown" or command == "disableAutomaticShutdown" or command == "abortAutomaticShutdown":
+			self._plugin_manager.send_plugin_message(self._identifier,
+													 {'powerOffWhenIdle': self.powerOffWhenIdle, 'type': "timeout",
+													  'timeout_value': self._timeout_value})
+
+	def on_api_get(self, request):
+		if not Permissions.PLUGIN_TASMOTA_VIEW.can():
+			return flask.make_response("Insufficient rights", 403)
+
+		if request.args.get("getEnergyData"):
+			self._logger.info(request.args)
 			response = {}
-			if "start_date" in data and data["start_date"] != "":
-				start_date = data["start_date"]
-			else:
-				start_date = datetime.date.today() - timedelta(days=1)
-			if "end_date" in data and data["end_date"] != "":
-				end_date = data["end_date"]
-			else:
-				end_date = datetime.date.today() + timedelta(days=1)
+			start_date = request.args.get("start_date", datetime.now().date() - timedelta(days=1))
+			end_date = request.args.get("end_date", datetime.now().date() + timedelta(days=1))
+
 			energy_db = sqlite3.connect(self.energy_db_path)
 			energy_cursor = energy_db.cursor()
 			energy_cursor.execute(
@@ -733,15 +740,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 			sensor_db.close()
 
 			return flask.jsonify(response)
-		if command == "enableAutomaticShutdown" or command == "disableAutomaticShutdown":
-			self._tasmota_logger.debug("Automatic power off setting changed: %s" % self.powerOffWhenIdle)
-			self._settings.set_boolean(["powerOffWhenIdle"], self.powerOffWhenIdle)
-			self._settings.save()
-		# eventManager().fire(Events.SETTINGS_UPDATED)
-		if command == "enableAutomaticShutdown" or command == "disableAutomaticShutdown" or command == "abortAutomaticShutdown":
-			self._plugin_manager.send_plugin_message(self._identifier,
-													 {'powerOffWhenIdle': self.powerOffWhenIdle, 'type': "timeout",
-													  'timeout_value': self._timeout_value})
+
+		if request.args.get("checkStatus"):
+			return flask.jsonify(self.check_status(request.args.get("ip"), request.args.get("idx")))
+		return None
 
 	def is_api_protected(self):
 		return True
@@ -1112,7 +1114,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 		return [
 			{'key': "CONTROL", 'name': "Control Devices",
 			 'description': gettext("Allows control of configured devices."), 'roles': ["admin"], 'dangerous': True,
-			 'default_groups': [ADMIN_GROUP]}
+			 'default_groups': [ADMIN_GROUP, USER_GROUP]},
+			{'key': "VIEW", 'name': "View UI Elements",
+			 'description': gettext("Allows seeing UI elements like the graphing tab and navbar buttons."), 'roles': ["admin", "users"], 'dangerous': False,
+			 'default_groups': [ADMIN_GROUP, USER_GROUP]}
 		]
 
 	##~~ Softwareupdate hook
