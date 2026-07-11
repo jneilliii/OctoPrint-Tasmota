@@ -4,7 +4,7 @@
  * Author: jneilliii
  * License: AGPLv3
  */
-(function() {
+$(function() {
 	function tasmotaViewModel(parameters) {
 		var self = this;
 
@@ -716,4 +716,4 @@
 		["settingsViewModel","loginStateViewModel","filesViewModel"],
 		["#navbar_plugin_tasmota","#settings_plugin_tasmota","#tab_plugin_tasmota","#sidebar_plugin_tasmota_wrapper"]
 	]);
-})();
+});
