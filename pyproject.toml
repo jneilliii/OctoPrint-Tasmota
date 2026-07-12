@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "OctoPrint-Tasmota"
-version = "1.1.5"
+version = "1.1.6"
 description = "Simple plugin to control sonoff devices that have been flashed with Tasmota."
 authors = [
     { name = "jneilliii", email = "jneilliii+github@gmail.com" },
