@@ -1113,10 +1113,10 @@ class tasmotaPlugin(octoprint.plugin.SettingsPlugin,
 	def get_additional_permissions(self, *args, **kwargs):
 		return [
 			{'key': "CONTROL", 'name': "Control Devices",
-			 'description': gettext("Allows control of configured devices."), 'roles': ["admin"], 'dangerous': True,
+			 'description': gettext("Allows control of configured devices."), 'roles': ["control"], 'dangerous': True,
 			 'default_groups': [ADMIN_GROUP, USER_GROUP]},
 			{'key': "VIEW", 'name': "View UI Elements",
-			 'description': gettext("Allows seeing UI elements like the graphing tab and navbar buttons."), 'roles': ["admin", "users"], 'dangerous': False,
+			 'description': gettext("Allows seeing UI elements like the graphing tab and navbar buttons."), 'roles': ["view"], 'dangerous': False,
 			 'default_groups': [ADMIN_GROUP, USER_GROUP]}
 		]
 
