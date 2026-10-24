@@ -6,6 +6,8 @@ This plugin is to control devices that have been flashed with [Tasmota](https://
 
 **Single relay devices need to use 1 for index.**
 
+**WARNING:** Tasmota firmware version 15.5.0+ requires `SetOption128 ON` to allow HTTP API communication. [Issue 221](https://github.com/jneilliii/OctoPrint-Tasmota/issues/221)
+
 ##  Screenshots
 ![screenshot](screenshot.png)
 
@@ -145,12 +147,8 @@ Once installed go into settings and enter the ip address for your Tasmota device
   With these options the raspberry pi will be shutdown 5 seconds after the idle timeout is reached (as configured on the main settings page) and send a backlog command to your Tasmota device to power off after a 60 second delay.
 
 ## Most recent changelog
-**[1.0.4](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/1.0.4)** (07/31/2021)
-* fix bug with M150 command not having I parameter causing the command to get lost in the queue, #143
-* make request timeout configurable in settings, #142
-* add numeric StatusSTS messages for chk values, #150
-* M118 support for LED commands for more real-time control based on what's happening on the printer (ie waiting for heat up). The function is similar to the M150 support but you will need to use the command `M118 TASMOTA_M150 I192.168.0.105 R### G### B### W### P###`
-* account for energy data with multiple relay device, #155
+**[1.1.6](https://github.com/jneilliii/OctoPrint-Tasmota/releases/tag/1.1.6)** (07/31/2021)
+* add more granular permissions for separating device control and viewing status/UI elements.
 
 ### [All releases](https://github.com/jneilliii/OctoPrint-Tasmota/releases)
 
